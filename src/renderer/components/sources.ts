@@ -66,10 +66,12 @@ export async function openSourcesModal(container: HTMLElement): Promise<void> {
     const results = await window.reader.sources.search(sourceId, keyword)
     resultsEl.innerHTML = ''
     for (const r of results) {
-      const row = document.createElement('button')
+      const row = document.createElement('div')
       row.className = 'source-result'
-      row.textContent = `${r.title} · ${r.author}`
-      row.addEventListener('click', async () => {
+      row.innerHTML = `<span>${escapeHtml(r.title)} · ${escapeHtml(r.author)}</span>
+        <button data-open="1">阅读</button>
+        <button data-add="1">加入书架</button>`
+      row.querySelector('[data-open]')!.addEventListener('click', async () => {
         const chapters = await window.reader.sources.chapters(sourceId, r.bookUrl)
         const idx = Number(prompt(`共 ${chapters.length} 章，输入章节号（1-${chapters.length}）`, '1') ?? '1')
         const chapter = chapters[Math.max(0, idx - 1)]
@@ -80,6 +82,11 @@ export async function openSourcesModal(container: HTMLElement): Promise<void> {
         view.innerHTML = `<h2>${escapeHtml(chapter.title)}</h2><div>${sanitizeHtml(html)}</div><button>关闭</button>`
         view.querySelector('button')!.addEventListener('click', () => view.remove())
         overlay.appendChild(view)
+      })
+      row.querySelector('[data-add]')!.addEventListener('click', async () => {
+        await window.reader.sources.addBook({ sourceId, bookUrl: r.bookUrl, title: r.title, author: r.author, cover: r.cover })
+        overlay.remove()
+        container.dispatchEvent(new CustomEvent('library-changed'))
       })
       resultsEl.appendChild(row)
     }

@@ -2,7 +2,7 @@ import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Progress, Settings } from '../shared/book'
+import type { Chapter, Progress, Settings } from '../shared/book'
 import type { BookSource } from '../shared/source'
 import { LibraryStore } from './library'
 import { fetchHtml } from './network'
@@ -142,6 +142,9 @@ export function registerIpc(
     if (!src) throw new Error('书源不存在')
     return sourceEngine.content(src, chapterUrl)
   })
+  ipcMain.handle('sources:addBook', (_e, args: { sourceId: string; bookUrl: string; title: string; author?: string; cover?: string }) =>
+    library.addSourceBook(args)
+  )
   uploadManager.onUploaded((p) => {
     void library.addFiles([p])
     for (const win of BrowserWindow.getAllWindows()) {
@@ -169,6 +172,16 @@ export function registerIpc(
     if (item.meta.format === 'html') {
       const parsed = await parseHtmlFile(item.meta.path!)
       return { meta: { ...item.meta, ...parsed.meta }, chapters: parsed.chapters }
+    }
+    if (item.meta.format === 'source' && item.meta.sourceId && item.meta.bookUrl) {
+      const src = (await readSources()).find((s) => s.id === item.meta.sourceId)
+      if (!src) throw new Error('书源已删除')
+      const chapters = await fetchChapterList(src, item.meta.bookUrl)
+      const loaded: Chapter[] = []
+      for (const c of chapters) {
+        loaded.push({ id: c.id, title: c.title, html: await sourceEngine.content(src, c.url) })
+      }
+      return { meta: item.meta, chapters: loaded }
     }
     return { meta: item.meta, chapters: [] }
   })

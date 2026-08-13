@@ -53,6 +53,30 @@ export class LibraryStore {
     return this.items[id]
   }
 
+  async addSourceBook(args: {
+    sourceId: string
+    bookUrl: string
+    title: string
+    author?: string
+    cover?: string
+  }): Promise<LibraryItem> {
+    await this.load()
+    const id = randomUUID()
+    const meta: BookMeta = {
+      id,
+      title: args.title,
+      author: args.author ?? '',
+      cover: args.cover,
+      format: 'source',
+      sourceId: args.sourceId,
+      bookUrl: args.bookUrl,
+      addedAt: Date.now()
+    }
+    this.items[id] = emptyItem(meta)
+    await this.flush()
+    return this.items[id]
+  }
+
   async addFiles(paths: string[]): Promise<LibraryItem[]> {
     await this.load()
     const added: LibraryItem[] = []

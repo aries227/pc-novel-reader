@@ -17,6 +17,7 @@ async function showLibrary(): Promise<void> {
 appEl.addEventListener('open-upload', () => {
   void openUploadModal(appEl, () => void showLibrary())
 })
+appEl.addEventListener('library-changed', () => void showLibrary())
 appEl.addEventListener('open-sources', () => void openSourcesModal(appEl))
 appEl.addEventListener('open-settings', () => alert('设置将在后续任务实现'))
 

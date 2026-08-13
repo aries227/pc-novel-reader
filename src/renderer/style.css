@@ -36,5 +36,6 @@ body[data-theme="light"] { --bg: #ffffff; --fg: #222; }
 .source-modal { width: 560px; max-height: 80vh; overflow-y: auto; text-align: left; }
 .source-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eee; }
 .source-row span { flex: 1; }
-.source-result { display: block; width: 100%; text-align: left; padding: 8px; margin: 4px 0; cursor: pointer; }
+.source-result { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 8px; margin: 4px 0; border: 1px solid #eee; border-radius: 6px; }
+.source-result span { flex: 1; }
 .source-content { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-top: 12px; background: #fff; }

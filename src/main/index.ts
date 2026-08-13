@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
+import { LibraryStore } from './library'
+import { SettingsStore } from './settings'
 import { registerIpc } from './ipc'
 
 let win: BrowserWindow | null = null
@@ -27,7 +29,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  registerIpc()
+  const userData = app.getPath('userData')
+  registerIpc(new LibraryStore(userData), new SettingsStore(userData))
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

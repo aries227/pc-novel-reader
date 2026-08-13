@@ -1,7 +1,8 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'node:path'
-import type { Settings } from '../shared/book'
+import type { Progress, Settings } from '../shared/book'
 import { LibraryStore } from './library'
+import { parseTxt } from './parsers/txt'
 import { SettingsStore } from './settings'
 
 export function registerIpc(library: LibraryStore, settings: SettingsStore): void {
@@ -49,5 +50,18 @@ export function registerIpc(library: LibraryStore, settings: SettingsStore): voi
   })
   ipcMain.handle('settings:get', () => settings.get())
   ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => settings.set(patch))
+  ipcMain.handle('book:open', async (_e, id: string) => {
+    const item = await library.get(id)
+    if (!item) return null
+    if (item.meta.format === 'txt' && item.meta.path) {
+      const parsed = await parseTxt(item.meta.path)
+      return { meta: { ...item.meta, title: parsed.meta.title }, chapters: parsed.chapters }
+    }
+    return { meta: item.meta, chapters: [] }
+  })
+  ipcMain.handle('book:saveProgress', (_e, p: Progress) => library.saveProgress(p))
+  ipcMain.handle('book:listBookmarks', async (_e, id: string) => (await library.get(id))?.bookmarks ?? [])
+  ipcMain.handle('book:addBookmark', (_e, b) => library.addBookmark(b))
+  ipcMain.handle('book:removeBookmark', (_e, id: string) => library.removeBookmark(id))
   ipcMain.on('app:quit', () => BrowserWindow.getFocusedWindow()?.close())
 }

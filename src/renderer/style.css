@@ -10,3 +10,21 @@ body { background: var(--bg); color: var(--fg); font-family: "Microsoft YaHei", 
 .book-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .book-author, .book-progress { font-size: 12px; color: #888; }
 .lib-empty { grid-column: 1 / -1; text-align: center; color: #999; padding: 80px 0; }
+.reader-root { display: flex; flex-direction: column; height: 100%; }
+.reader-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid #ddd; }
+.reader-spacer { flex: 1; }
+.reader-body { flex: 1; display: flex; min-height: 0; }
+.reader-main { flex: 1; overflow: hidden; }
+.reader-page { height: 100%; overflow-x: auto; overflow-y: hidden; padding: 24px 48px; column-width: 34em; column-gap: 3em; scroll-behavior: smooth; }
+.reader-page[data-mode="scroll"] { column-width: auto; overflow-y: auto; }
+.reader-toc { width: 240px; border-right: 1px solid #ddd; overflow-y: auto; }
+.reader-toc.hidden { display: none; }
+.reader-toc ul { list-style: none; margin: 0; padding: 8px; }
+.reader-toc li { padding: 6px 8px; cursor: pointer; border-radius: 4px; }
+.reader-toc li.active { background: var(--accent); color: #fff; }
+.reader-footer { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-top: 1px solid #ddd; }
+.reader-progress { flex: 1; }
+.reader-settings { position: absolute; right: 16px; top: 48px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+.reader-settings.hidden { display: none; }
+body[data-theme="dark"] { --bg: #1e1e1e; --fg: #ccc; }
+body[data-theme="light"] { --bg: #ffffff; --fg: #222; }

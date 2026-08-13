@@ -1,10 +1,15 @@
 import './style.css'
 import { renderLibrary } from './components/library'
+import { renderReader } from './components/reader'
 
 const appEl = document.getElementById('app')!
 
+async function showReader(id: string): Promise<void> {
+  await renderReader(appEl, id, () => void showLibrary())
+}
+
 async function showLibrary(): Promise<void> {
-  await renderLibrary(appEl, () => {})
+  await renderLibrary(appEl, (id) => void showReader(id))
 }
 
 appEl.addEventListener('open-upload', () => alert('扫码上传将在后续任务实现'))

@@ -1,6 +1,7 @@
 import './style.css'
 import { renderLibrary } from './components/library'
 import { renderReader } from './components/reader'
+import { openSourcesModal } from './components/sources'
 import { openUploadModal } from './components/upload'
 
 const appEl = document.getElementById('app')!
@@ -16,7 +17,7 @@ async function showLibrary(): Promise<void> {
 appEl.addEventListener('open-upload', () => {
   void openUploadModal(appEl, () => void showLibrary())
 })
-appEl.addEventListener('open-sources', () => alert('书源将在后续任务实现'))
+appEl.addEventListener('open-sources', () => void openSourcesModal(appEl))
 appEl.addEventListener('open-settings', () => alert('设置将在后续任务实现'))
 
 void showLibrary()

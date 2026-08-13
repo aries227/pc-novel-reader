@@ -46,7 +46,7 @@ export function createUploadServer(
 
   function page(): string {
     return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>上传到简阅</title><style>body{font-family:system-ui;padding:24px;max-width:480px;margin:0 auto}h1{font-size:20px}input,button{width:100%;padding:12px;margin:8px 0;font-size:16px}li{color:#2a7a2a}</style></head><body><h1>上传书籍到简阅</h1><input type="file" id="f" multiple accept=".txt,.epub,.mobi,.azw3,.fb2,.pdf,.html,.htm,.docx"><button onclick="upload()">上传</button><ul id="log"></ul><script>
-async function upload(){const inp=document.getElementById('f');const log=document.getElementById('log');for(const file of inp.files){const fd=new FormData();fd.append('files',file);try{const r=await fetch('/upload',{method:'POST',body:fd});const j=await r.json();const li=document.createElement('li');li.textContent=j.ok?'已上传 '+file.name:'失败 '+file.name+': '+j.error;log.appendChild(li)}catch(e){const li=document.createElement('li');li.textContent='失败 '+file.name;log.appendChild(li)}}}
+async function upload(){const inp=document.getElementById('f');const log=document.getElementById('log');for(const file of inp.files){const fd=new FormData();fd.append('files',file);try{const r=await fetch('/upload'+location.search,{method:'POST',body:fd});const j=await r.json();const li=document.createElement('li');li.textContent=j.ok?'已上传 '+file.name:'失败 '+file.name+': '+j.error;log.appendChild(li)}catch(e){const li=document.createElement('li');li.textContent='失败 '+file.name;log.appendChild(li)}}}
 </script></body></html>`
   }
 

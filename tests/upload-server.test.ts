@@ -10,6 +10,14 @@ beforeAll(async () => { dir = await mkdtemp(join(tmpdir(), 'reader-up-')) })
 afterAll(async () => { await rm(dir, { recursive: true, force: true }) })
 
 describe('upload server', () => {
+  it('上传页面把 token 带到 /upload 请求', async () => {
+    const mgr = createUploadServer({ inbox: join(dir, 'inbox2'), books: join(dir, 'books2') }, { ...DEFAULT_SETTINGS })
+    const status = await mgr.start()
+    const res = await fetch(status.url!)
+    const html = await res.text()
+    expect(html).toContain("fetch('/upload'+location.search")
+    mgr.stop()
+  })
   it('启动后可通过 token URL 上传 txt', async () => {
     const mgr = createUploadServer({ inbox: join(dir, 'inbox'), books: join(dir, 'books') }, { ...DEFAULT_SETTINGS })
     const status = await mgr.start()

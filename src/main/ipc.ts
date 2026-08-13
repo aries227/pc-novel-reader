@@ -8,8 +8,9 @@ import { parseHtmlFile } from './parsers/html'
 import { parseTxt } from './parsers/txt'
 import { toReaderFileUrl } from './protocol-utils'
 import { SettingsStore } from './settings'
+import type { UploadManager } from './upload-server'
 
-export function registerIpc(library: LibraryStore, settings: SettingsStore): void {
+export function registerIpc(library: LibraryStore, settings: SettingsStore, uploadManager: UploadManager): void {
   ipcMain.handle('dialog:openFiles', async () => {
     const win = BrowserWindow.getFocusedWindow()
     const result = await dialog.showOpenDialog(win!, {
@@ -54,6 +55,15 @@ export function registerIpc(library: LibraryStore, settings: SettingsStore): voi
   })
   ipcMain.handle('settings:get', () => settings.get())
   ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => settings.set(patch))
+  ipcMain.handle('upload:status', () => uploadManager.status())
+  ipcMain.handle('upload:start', () => uploadManager.start())
+  ipcMain.handle('upload:stop', () => { uploadManager.stop() })
+  uploadManager.onUploaded((p) => {
+    void library.addFiles([p])
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('upload:uploaded', p)
+    }
+  })
   ipcMain.handle('book:open', async (_e, id: string) => {
     const item = await library.get(id)
     if (!item) return null

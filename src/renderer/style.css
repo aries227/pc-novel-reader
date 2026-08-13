@@ -28,3 +28,8 @@ body { background: var(--bg); color: var(--fg); font-family: "Microsoft YaHei", 
 .reader-settings.hidden { display: none; }
 body[data-theme="dark"] { --bg: #1e1e1e; --fg: #ccc; }
 body[data-theme="light"] { --bg: #ffffff; --fg: #222; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: #fff; border-radius: 12px; padding: 24px; width: 360px; text-align: center; }
+.upload-qr img { width: 220px; height: 220px; }
+.upload-url { font-size: 12px; color: #666; word-break: break-all; }
+.modal-actions { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }

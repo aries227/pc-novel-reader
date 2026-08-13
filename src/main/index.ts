@@ -4,12 +4,14 @@ import { registerReaderProtocol } from './protocol'
 import { LibraryStore } from './library'
 import { SettingsStore } from './settings'
 import { registerIpc } from './ipc'
+import { createUploadServer } from './upload-server'
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'reader-file', privileges: { secure: true, supportFetchAPI: true, stream: true, bypassCSP: false } }
 ])
 
 let win: BrowserWindow | null = null
+let uploadManager: ReturnType<typeof createUploadServer> | null = null
 
 function createWindow(): void {
   win = new BrowserWindow({
@@ -33,10 +35,16 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   registerReaderProtocol()
   const userData = app.getPath('userData')
-  registerIpc(new LibraryStore(userData), new SettingsStore(userData))
+  const settings = new SettingsStore(userData)
+  const s = await settings.get()
+  uploadManager = createUploadServer(
+    { inbox: join(userData, 'upload-inbox'), books: join(userData, 'books') },
+    s
+  )
+  registerIpc(new LibraryStore(userData), settings, uploadManager)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -46,3 +54,5 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+app.on('before-quit', () => { uploadManager?.stop() })

@@ -4,6 +4,7 @@ import { renderReader } from './components/reader'
 import { openSourcesModal } from './components/sources'
 import { openSettingsModal } from './components/settings'
 import { openUploadModal } from './components/upload'
+import { applySettingsToBody } from './theme'
 
 const appEl = document.getElementById('app')!
 
@@ -12,6 +13,7 @@ async function showReader(id: string): Promise<void> {
 }
 
 async function showLibrary(): Promise<void> {
+  applySettingsToBody(await window.reader.settings.get())
   await renderLibrary(appEl, (id) => void showReader(id))
 }
 

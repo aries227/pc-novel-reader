@@ -9,10 +9,14 @@ const settings = {
   fontSize: 18,
   lineHeight: 1.9,
   fontFamily: 'system',
+  backgroundOpacity: 0.8,
   mode: 'paged' as const,
   uploadPortMode: 'random' as const,
   maxUploadMb: 100,
-  sourceCacheLimit: 50
+  sourceCacheLimit: 50,
+  translateBaseUrl: 'https://api.deepseek.com',
+  translateModel: 'deepseek-chat',
+  translateTarget: '英文'
 }
 
 function mockReader(): void {
@@ -41,8 +45,13 @@ function mockReader(): void {
     },
     settings: {
       get: async () => settings,
-      set: async (patch) => ({ ...settings, ...patch })
+      set: async (patch) => ({ ...settings, ...patch }),
+      uploadBackground: async () => settings,
+      clearBackground: async () => settings,
+      uploadFont: async () => settings,
+      clearFont: async () => settings
     },
+    translate: { translate: async (t: string) => `译文:${t}` },
     upload: {
       status: async () => ({ running: false }),
       start: async () => ({ running: false }),

@@ -34,6 +34,13 @@ export interface ReaderApi {
   settings: {
     get(): Promise<Settings>
     set(patch: Partial<Settings>): Promise<Settings>
+    uploadBackground(): Promise<Settings>
+    clearBackground(): Promise<Settings>
+    uploadFont(): Promise<Settings>
+    clearFont(): Promise<Settings>
+  }
+  translate: {
+    translate(text: string): Promise<string>
   }
   upload: {
     status(): Promise<UploadStatus>

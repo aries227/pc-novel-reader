@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import type { Chapter, Progress, Settings } from '../shared/book'
 import type { BookSource } from '../shared/source'
 import { LibraryStore } from './library'
+import { pickBackgroundImage, pickFontFile } from './assets'
 import { fetchHtml } from './network'
 import { parseDocx } from './parsers/docx'
 import { parseEbook } from './parsers/ebook'
@@ -15,6 +16,7 @@ import { toReaderFileUrl } from './protocol-utils'
 import { SettingsStore } from './settings'
 import { createCachedEngine, fetchChapterList, searchSource } from './sources/engine'
 import { normalizeSource } from './sources/validate'
+import { translateText } from './translate'
 import type { UploadManager } from './upload-server'
 
 export function registerIpc(
@@ -23,7 +25,8 @@ export function registerIpc(
   uploadManager: UploadManager,
   booksDir: string,
   sourcesFile: string,
-  sourceCacheDir: string
+  sourceCacheDir: string,
+  assetsDir: string
 ): void {
   const sourceEngine = createCachedEngine(sourceCacheDir)
 
@@ -78,6 +81,27 @@ export function registerIpc(
   })
   ipcMain.handle('settings:get', () => settings.get())
   ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => settings.set(patch))
+  ipcMain.handle('settings:uploadBackground', async () => {
+    const path = await pickBackgroundImage(assetsDir)
+    return path ? settings.set({ backgroundImage: path }) : settings.get()
+  })
+  ipcMain.handle('settings:clearBackground', () => settings.set({ backgroundImage: undefined }))
+  ipcMain.handle('settings:uploadFont', async () => {
+    const path = await pickFontFile(assetsDir)
+    return path ? settings.set({ customFont: path }) : settings.get()
+  })
+  ipcMain.handle('settings:clearFont', () => settings.set({ customFont: undefined }))
+  ipcMain.handle('translate:translate', async (_e, text: string) => {
+    const s = await settings.get()
+    if (!s.translateApiKey) throw new Error('请先在设置中填写 DeepSeek API Key')
+    return translateText({
+      text,
+      target: s.translateTarget,
+      apiKey: s.translateApiKey,
+      baseUrl: s.translateBaseUrl,
+      model: s.translateModel
+    })
+  })
   ipcMain.handle('upload:status', () => uploadManager.status())
   ipcMain.handle('upload:start', () => uploadManager.start())
   ipcMain.handle('upload:stop', () => { uploadManager.stop() })

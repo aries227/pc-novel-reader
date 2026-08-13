@@ -52,7 +52,8 @@ app.whenReady().then(async () => {
     uploadManager,
     join(userData, 'books'),
     join(userData, 'sources.json'),
-    join(userData, 'cache')
+    join(userData, 'cache'),
+    join(userData, 'assets')
   )
   createWindow()
   checkForUpdatesOnStart()

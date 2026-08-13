@@ -7,9 +7,11 @@
 - 格式支持：TXT（自动识别 UTF-8 / GBK / GB18030 / Big5 等编码）、EPUB、MOBI、AZW3、FB2、PDF、HTML、DOCX。
 - 书架：网格展示、最近阅读排序、进度记忆、书签、书架 JSON 导入/导出。
 - 阅读器：翻页 / 滚动双模式、字号 / 行距 / 主题（白 / 米黄 / 夜间）调节、章节目录、进度条、快捷键（`←`/`→`/`PageUp`/`PageDown`/`空格` 翻页，`Esc` 返回书架）。
+- 主题与外观：白 / 米黄 / 夜间 / 护眼绿四套主题，支持上传自定义背景图片和字体文件。
 - 扫码上传：手机扫描二维码后直接用浏览器上传书籍到书架，无需安装 App。
 - 书源系统：导入 / 删除 / 搜索 JSON 书源，在线搜索、阅读、加入书架，章节自动缓存，断网可读。
 - 网页解析：粘贴任意网页 URL，自动提取正文生成书籍。
+- AI 翻译：接入 DeepSeek API（OpenAI 兼容接口），可翻译选中文字或整章内容。
 
 ## 开发运行
 
@@ -65,6 +67,22 @@ gh release create v0.2.0 "dist/简阅 Setup 0.2.0.exe" "dist/简阅 Setup 0.2.0.
 ```powershell
 netsh advfirewall firewall add rule name="jian-yue-upload" dir=in action=allow protocol=TCP localport=6789
 ```
+
+## 主题与外观
+
+在“设置”中：
+
+- 主题：白 / 米黄 / 夜间 / 护眼绿。
+- 上传背景图片：阅读页使用该图片作为背景，并自动叠加半透明遮罩保证文字可读性；可随时清除恢复纯色背景。
+- 上传字体：支持 ttf / otf / woff / woff2，上传后在“字体”里选择“自定义字体”生效。
+
+## AI 翻译（DeepSeek）
+
+1. 到 DeepSeek 开放平台（https://platform.deepseek.com）获取 API Key。
+2. 在“设置”里填入 API Key（默认接口 `https://api.deepseek.com`、模型 `deepseek-chat`，也可自行修改），并选择翻译目标语言（中文 / 英文 / 日文 / 韩文）。
+3. 阅读页点击工具栏“翻译”按钮：选中了文字就翻译选中片段，否则翻译当前整章；译文显示在右下角面板。
+
+API Key 只保存在本机设置文件中，仅用于向 DeepSeek 发起翻译请求。
 
 ## 书源使用
 

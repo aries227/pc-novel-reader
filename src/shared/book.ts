@@ -40,15 +40,22 @@ export interface Bookmark {
 export interface LibraryItem { meta: BookMeta; progress?: Progress; bookmarks: Bookmark[] }
 
 export interface Settings {
-  theme: 'light' | 'sepia' | 'dark'
+  theme: 'light' | 'sepia' | 'dark' | 'green'
   fontSize: number
   lineHeight: number
   fontFamily: string
+  customFont?: string
+  backgroundImage?: string
+  backgroundOpacity: number
   mode: 'paged' | 'scroll'
   uploadPortMode: 'random' | 'fixed'
   uploadPort?: number
   maxUploadMb: number
   sourceCacheLimit: number
+  translateApiKey?: string
+  translateBaseUrl: string
+  translateModel: string
+  translateTarget: string
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -56,10 +63,14 @@ export const DEFAULT_SETTINGS: Settings = {
   fontSize: 18,
   lineHeight: 1.9,
   fontFamily: 'system',
+  backgroundOpacity: 0.8,
   mode: 'paged',
   uploadPortMode: 'random',
   maxUploadMb: 100,
-  sourceCacheLimit: 50
+  sourceCacheLimit: 50,
+  translateBaseUrl: 'https://api.deepseek.com',
+  translateModel: 'deepseek-chat',
+  translateTarget: '英文'
 }
 
 export const SUPPORTED_EXTENSIONS = ['txt', 'epub', 'mobi', 'azw3', 'fb2', 'pdf', 'html', 'htm', 'docx'] as const

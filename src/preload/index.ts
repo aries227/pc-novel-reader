@@ -20,8 +20,13 @@ const api: ReaderApi = {
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
-    set: (patch) => ipcRenderer.invoke('settings:set', patch)
+    set: (patch) => ipcRenderer.invoke('settings:set', patch),
+    uploadBackground: () => ipcRenderer.invoke('settings:uploadBackground'),
+    clearBackground: () => ipcRenderer.invoke('settings:clearBackground'),
+    uploadFont: () => ipcRenderer.invoke('settings:uploadFont'),
+    clearFont: () => ipcRenderer.invoke('settings:clearFont')
   },
+  translate: { translate: (text) => ipcRenderer.invoke('translate:translate', text) },
   upload: {
     status: () => ipcRenderer.invoke('upload:status'),
     start: () => ipcRenderer.invoke('upload:start'),

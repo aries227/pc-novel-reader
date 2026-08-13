@@ -2,6 +2,7 @@ import type { Settings } from '../../shared/book'
 import type { PdfControls } from '../reader/pdf-view'
 import { canNext, nextPage, prevPage } from '../reader/pager'
 import { sanitizeHtml } from '../reader/sanitize'
+import { applySettingsToBody, resolveFontFamily } from '../theme'
 
 export async function renderReader(container: HTMLElement, bookId: string, onBack: () => void): Promise<void> {
   const data = await window.reader.book.open(bookId)
@@ -19,6 +20,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <span class="reader-spacer"></span>
         <button data-act="toc">目录</button>
         <button data-act="bookmark">书签</button>
+        <button data-act="translate">翻译</button>
         <button data-act="settings">设置</button>
         <button data-act="upload">扫码上传</button>
       </header>
@@ -36,6 +38,10 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <label>行距 <input type="range" data-set="lineHeight" min="1.2" max="2.6" step="0.1" /></label>
         <label>模式 <select data-set="mode"><option value="paged">翻页</option><option value="scroll">滚动</option></select></label>
       </div>
+      <div class="translate-panel hidden">
+        <div class="translate-head"><span>译文</span><button data-act="translate-close">×</button></div>
+        <div class="translate-content"></div>
+      </div>
     </div>`
 
   const root = container.querySelector('.reader-root') as HTMLElement
@@ -46,9 +52,10 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const progressEl = root.querySelector('.reader-progress') as HTMLInputElement
 
   function applyTheme(s: Settings): void {
-    document.body.dataset.theme = s.theme
+    applySettingsToBody(s)
     pageEl.style.fontSize = `${s.fontSize}px`
     pageEl.style.lineHeight = String(s.lineHeight)
+    pageEl.style.fontFamily = resolveFontFamily(s.fontFamily, s.customFont)
   }
 
   function renderChapter(): void {
@@ -83,6 +90,24 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   })
   root.querySelector('[data-act="upload"]')!.addEventListener('click', () => container.dispatchEvent(new CustomEvent('open-upload')))
   root.querySelector('[data-act="settings"]')!.addEventListener('click', () => root.querySelector('.reader-settings')!.classList.toggle('hidden'))
+  root.querySelector('[data-act="translate"]')!.addEventListener('click', async () => {
+    const panel = root.querySelector('.translate-panel') as HTMLElement
+    const contentEl = panel.querySelector('.translate-content') as HTMLElement
+    panel.classList.remove('hidden')
+    contentEl.textContent = '翻译中…'
+    const sel = window.getSelection()
+    const anchor = sel?.anchorNode
+    const selected = sel?.toString().trim() ?? ''
+    const text = selected && anchor && pageEl.contains(anchor) ? selected : pageEl.innerText.slice(0, 8000)
+    try {
+      contentEl.textContent = await window.reader.translate.translate(text)
+    } catch (err) {
+      contentEl.textContent = err instanceof Error ? err.message : '翻译失败'
+    }
+  })
+  root.querySelector('[data-act="translate-close"]')!.addEventListener('click', () => {
+    root.querySelector('.translate-panel')!.classList.add('hidden')
+  })
 
   const panel = root.querySelector('.reader-settings') as HTMLElement
   panel.querySelectorAll('[data-set]').forEach((el) => {

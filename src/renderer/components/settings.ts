@@ -10,6 +10,10 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
       <label>默认行距 <input type="number" data-set="lineHeight" min="1.2" max="2.6" step="0.1" /></label>
       <label>上传端口 <select data-set="uploadPortMode"><option value="random">随机</option><option value="fixed">固定</option></select></label>
       <label>上传上限(MB) <input type="number" data-set="maxUploadMb" min="1" max="1024" /></label>
+      <div class="update-row">
+        <button data-act="check-update">检查更新</button>
+        <span class="update-status"></span>
+      </div>
       <button data-act="close">关闭</button>
     </div>`
   container.appendChild(overlay)
@@ -23,5 +27,20 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
       document.body.dataset.theme = key === 'theme' ? raw : document.body.dataset.theme
     })
   })
-  overlay.querySelector('[data-act="close"]')!.addEventListener('click', () => overlay.remove())
+  const statusEl = overlay.querySelector('.update-status') as HTMLElement
+  const unsub = window.reader.update.onStatus((status) => {
+    if (status.phase === 'checking') statusEl.textContent = '正在检查更新…'
+    else if (status.phase === 'available') statusEl.textContent = `发现新版本 v${status.version}，正在后台下载…`
+    else if (status.phase === 'downloading') statusEl.textContent = `下载中 ${Math.round(status.percent ?? 0)}%`
+    else if (status.phase === 'downloaded') statusEl.textContent = '已下载，重启应用即可安装更新'
+    else if (status.phase === 'up-to-date') statusEl.textContent = '已是最新版本'
+    else if (status.phase === 'error') statusEl.textContent = status.message ?? '检查更新失败'
+  })
+  overlay.querySelector('[data-act="check-update"]')!.addEventListener('click', () => {
+    void window.reader.update.check()
+  })
+  overlay.querySelector('[data-act="close"]')!.addEventListener('click', () => {
+    unsub()
+    overlay.remove()
+  })
 }

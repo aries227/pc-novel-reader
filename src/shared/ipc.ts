@@ -54,6 +54,11 @@ export interface ReaderApi {
     addBook(args: { sourceId: string; bookUrl: string; title: string; author?: string; cover?: string }): Promise<LibraryItem>
   }
   web: { parse(url: string): Promise<LibraryItem> }
+  update: {
+    check(): Promise<void>
+    install(): Promise<void>
+    onStatus(cb: (status: { phase: string; version?: string; percent?: number; message?: string }) => void): () => void
+  }
   dialog: { openFiles(): Promise<string[]> }
   app: { quit(): void }
 }

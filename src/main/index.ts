@@ -5,6 +5,7 @@ import { LibraryStore } from './library'
 import { SettingsStore } from './settings'
 import { registerIpc } from './ipc'
 import { createUploadServer } from './upload-server'
+import { checkForUpdatesOnStart, registerUpdater } from './updater'
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'reader-file', privileges: { secure: true, supportFetchAPI: true, stream: true, bypassCSP: false } }
@@ -40,6 +41,7 @@ app.whenReady().then(async () => {
   const userData = app.getPath('userData')
   const settings = new SettingsStore(userData)
   const s = await settings.get()
+  registerUpdater()
   uploadManager = createUploadServer(
     { inbox: join(userData, 'upload-inbox'), books: join(userData, 'books') },
     s
@@ -53,6 +55,7 @@ app.whenReady().then(async () => {
     join(userData, 'cache')
   )
   createWindow()
+  checkForUpdatesOnStart()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

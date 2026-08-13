@@ -62,6 +62,11 @@ function mockReader(): void {
       addBook: async () => ({ meta: { id: 'x', title: 'x', author: '', format: 'source', addedAt: 1 }, bookmarks: [] })
     },
     web: { parse: async () => ({ meta: { id: 'x', title: 'x', author: '', format: 'web', addedAt: 1 }, bookmarks: [] }) },
+    update: {
+      check: async () => undefined,
+      install: async () => undefined,
+      onStatus: () => () => undefined
+    },
     dialog: { openFiles: async () => [] },
     app: { quit: () => undefined }
   }

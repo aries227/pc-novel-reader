@@ -45,6 +45,15 @@ const api: ReaderApi = {
     addBook: (args) => ipcRenderer.invoke('sources:addBook', args)
   },
   web: { parse: (url) => ipcRenderer.invoke('web:parse', url) },
+  update: {
+    check: () => ipcRenderer.invoke('update:check'),
+    install: () => ipcRenderer.invoke('update:install'),
+    onStatus: (cb) => {
+      const listener = (_e: unknown, status: { phase: string; version?: string; percent?: number; message?: string }) => cb(status)
+      ipcRenderer.on('update:status', listener)
+      return () => ipcRenderer.removeListener('update:status', listener)
+    }
+  },
   dialog: { openFiles: () => ipcRenderer.invoke('dialog:openFiles') },
   app: { quit: () => ipcRenderer.send('app:quit') }
 }

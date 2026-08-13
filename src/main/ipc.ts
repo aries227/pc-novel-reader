@@ -2,7 +2,9 @@ import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'node:path'
 import type { Progress, Settings } from '../shared/book'
 import { LibraryStore } from './library'
+import { parseDocx } from './parsers/docx'
 import { parseEbook } from './parsers/ebook'
+import { parseHtmlFile } from './parsers/html'
 import { parseTxt } from './parsers/txt'
 import { SettingsStore } from './settings'
 
@@ -60,6 +62,14 @@ export function registerIpc(library: LibraryStore, settings: SettingsStore): voi
     }
     if (item.meta.format === 'epub' || item.meta.format === 'mobi' || item.meta.format === 'azw3' || item.meta.format === 'fb2') {
       const parsed = await parseEbook(item.meta.path!, item.meta.format)
+      return { meta: { ...item.meta, ...parsed.meta }, chapters: parsed.chapters }
+    }
+    if (item.meta.format === 'docx') {
+      const parsed = await parseDocx(item.meta.path!)
+      return { meta: { ...item.meta, ...parsed.meta }, chapters: parsed.chapters }
+    }
+    if (item.meta.format === 'html') {
+      const parsed = await parseHtmlFile(item.meta.path!)
       return { meta: { ...item.meta, ...parsed.meta }, chapters: parsed.chapters }
     }
     return { meta: item.meta, chapters: [] }

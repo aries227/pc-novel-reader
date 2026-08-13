@@ -6,6 +6,7 @@
   "description": "简洁高效的 PC 端小说阅读器",
   "author": "Codex",
   "main": "./out/main/index.js",
+  "type": "module",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "tsc --noEmit && electron-vite build",

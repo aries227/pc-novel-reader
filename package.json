@@ -1,0 +1,52 @@
+{
+  "name": "pc-novel-reader",
+  "productName": "简阅",
+  "version": "0.1.0",
+  "private": true,
+  "description": "简洁高效的 PC 端小说阅读器",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "tsc --noEmit && electron-vite build",
+    "preview": "electron-vite preview",
+    "test": "vitest run",
+    "dist": "npm run build && electron-builder --win nsis portable"
+  },
+  "dependencies": {
+    "@lingo-reader/epub-parser": "^0.4.6",
+    "@lingo-reader/fb2-parser": "^0.4.6",
+    "@lingo-reader/mobi-parser": "^0.4.6",
+    "@mozilla/readability": "^0.6.0",
+    "busboy": "^1.6.0",
+    "dompurify": "^3.4.13",
+    "iconv-lite": "^0.7.3",
+    "jschardet": "^3.1.4",
+    "jsdom": "^30.0.1",
+    "mammoth": "^1.12.1",
+    "pdfjs-dist": "^6.2.108",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.5",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "fflate": "^0.8.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.4"
+  },
+  "build": {
+    "appId": "com.local.jian-yue",
+    "productName": "简阅",
+    "directories": { "output": "dist" },
+    "files": ["out/**/*", "package.json"],
+    "win": { "target": ["nsis", "portable"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["electron", "esbuild"]
+  }
+}

@@ -1,8 +1,13 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, protocol } from 'electron'
 import { join } from 'node:path'
+import { registerReaderProtocol } from './protocol'
 import { LibraryStore } from './library'
 import { SettingsStore } from './settings'
 import { registerIpc } from './ipc'
+
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'reader-file', privileges: { secure: true, supportFetchAPI: true, stream: true, bypassCSP: false } }
+])
 
 let win: BrowserWindow | null = null
 
@@ -29,6 +34,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  registerReaderProtocol()
   const userData = app.getPath('userData')
   registerIpc(new LibraryStore(userData), new SettingsStore(userData))
   createWindow()

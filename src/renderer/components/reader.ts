@@ -1,4 +1,5 @@
 import type { Settings } from '../../shared/book'
+import type { PdfControls } from '../reader/pdf-view'
 import { canNext, nextPage, prevPage } from '../reader/pager'
 import { sanitizeHtml } from '../reader/sanitize'
 
@@ -8,6 +9,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const { meta, chapters } = data
   let chapterIndex = 0
   let settings = await window.reader.settings.get()
+  let pdf: PdfControls | null = null
 
   container.innerHTML = `
     <div class="reader-root">
@@ -50,6 +52,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   }
 
   function renderChapter(): void {
+    if (chapters.length === 0) return
     const chapter = chapters[chapterIndex]
     titleEl.textContent = `${meta.title} · ${chapter.title}`
     pageEl.innerHTML = sanitizeHtml(chapter.html)
@@ -75,6 +78,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   root.querySelector('[data-act="back"]')!.addEventListener('click', onBack)
   root.querySelector('[data-act="toc"]')!.addEventListener('click', () => root.querySelector('.reader-toc')!.classList.toggle('hidden'))
   root.querySelector('[data-act="bookmark"]')!.addEventListener('click', async () => {
+    if (chapters.length === 0) return
     await window.reader.book.addBookmark({ bookId, chapterIndex, paragraphIndex: 0, excerpt: chapters[chapterIndex].title })
   })
   root.querySelector('[data-act="upload"]')!.addEventListener('click', () => container.dispatchEvent(new CustomEvent('open-upload')))
@@ -95,6 +99,14 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
 
   function onKey(e: KeyboardEvent): void {
     if (e.key === 'Escape') { onBack(); return }
+    if (pdf) {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault(); pdf.next()
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault(); pdf.prev()
+      }
+      return
+    }
     if (settings.mode === 'paged') {
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
         e.preventDefault()
@@ -112,10 +124,27 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   document.addEventListener('keydown', onKey)
 
   progressEl.addEventListener('input', () => {
+    if (pdf) {
+      const total = Number(progressEl.max)
+      const page = Math.max(1, Math.round((Number(progressEl.value) / 100) * total))
+      pdf.goTo(page)
+      return
+    }
     chapterIndex = Math.round((Number(progressEl.value) / 100) * (chapters.length - 1))
     renderChapter()
   })
 
   applyTheme(settings)
-  renderChapter()
+  if (data.pdfUrl) {
+    titleEl.textContent = meta.title
+    const { renderPdf } = await import('../reader/pdf-view')
+    void renderPdf(pageEl, data.pdfUrl, (page, total) => {
+      pctEl.textContent = `${Math.round((page / total) * 100)}%`
+      progressEl.max = String(total)
+      progressEl.value = String(Math.round((page / total) * 100))
+      void window.reader.book.saveProgress({ bookId, chapterIndex: 0, page, updatedAt: Date.now() })
+    }).then((controls) => { pdf = controls })
+  } else {
+    renderChapter()
+  }
 }

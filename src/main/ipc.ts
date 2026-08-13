@@ -2,6 +2,7 @@ import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'node:path'
 import type { Progress, Settings } from '../shared/book'
 import { LibraryStore } from './library'
+import { parseEbook } from './parsers/ebook'
 import { parseTxt } from './parsers/txt'
 import { SettingsStore } from './settings'
 
@@ -56,6 +57,10 @@ export function registerIpc(library: LibraryStore, settings: SettingsStore): voi
     if (item.meta.format === 'txt' && item.meta.path) {
       const parsed = await parseTxt(item.meta.path)
       return { meta: { ...item.meta, title: parsed.meta.title }, chapters: parsed.chapters }
+    }
+    if (item.meta.format === 'epub' || item.meta.format === 'mobi' || item.meta.format === 'azw3' || item.meta.format === 'fb2') {
+      const parsed = await parseEbook(item.meta.path!, item.meta.format)
+      return { meta: { ...item.meta, ...parsed.meta }, chapters: parsed.chapters }
     }
     return { meta: item.meta, chapters: [] }
   })

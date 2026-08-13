@@ -44,7 +44,7 @@ app.whenReady().then(async () => {
     { inbox: join(userData, 'upload-inbox'), books: join(userData, 'books') },
     s
   )
-  registerIpc(new LibraryStore(userData), settings, uploadManager)
+  registerIpc(new LibraryStore(userData), settings, uploadManager, join(userData, 'books'))
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

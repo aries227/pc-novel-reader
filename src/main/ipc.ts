@@ -1,4 +1,6 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { randomUUID } from 'node:crypto'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Progress, Settings } from '../shared/book'
 import { LibraryStore } from './library'
@@ -6,11 +8,17 @@ import { parseDocx } from './parsers/docx'
 import { parseEbook } from './parsers/ebook'
 import { parseHtmlFile } from './parsers/html'
 import { parseTxt } from './parsers/txt'
+import { parseWebPage } from './readability'
 import { toReaderFileUrl } from './protocol-utils'
 import { SettingsStore } from './settings'
 import type { UploadManager } from './upload-server'
 
-export function registerIpc(library: LibraryStore, settings: SettingsStore, uploadManager: UploadManager): void {
+export function registerIpc(
+  library: LibraryStore,
+  settings: SettingsStore,
+  uploadManager: UploadManager,
+  booksDir: string
+): void {
   ipcMain.handle('dialog:openFiles', async () => {
     const win = BrowserWindow.getFocusedWindow()
     const result = await dialog.showOpenDialog(win!, {
@@ -58,6 +66,14 @@ export function registerIpc(library: LibraryStore, settings: SettingsStore, uplo
   ipcMain.handle('upload:status', () => uploadManager.status())
   ipcMain.handle('upload:start', () => uploadManager.start())
   ipcMain.handle('upload:stop', () => { uploadManager.stop() })
+  ipcMain.handle('web:parse', async (_e, url: string) => {
+    const { title, html } = await parseWebPage(url)
+    const file = join(booksDir, `${randomUUID()}.html`)
+    await writeFile(file, html, 'utf8')
+    const items = await library.addFiles([file])
+    items[0].meta.title = title
+    return items[0]
+  })
   uploadManager.onUploaded((p) => {
     void library.addFiles([p])
     for (const win of BrowserWindow.getAllWindows()) {

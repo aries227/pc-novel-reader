@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@types/busboy": "^1.5.4",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/qrcode": "^1.5.5",
     "electron": "^43.4.0",
@@ -41,12 +42,28 @@
   "build": {
     "appId": "com.local.jian-yue",
     "productName": "简阅",
-    "directories": { "output": "dist" },
-    "files": ["out/**/*", "package.json"],
-    "win": { "target": ["nsis", "portable"] },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["electron", "esbuild"]
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }

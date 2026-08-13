@@ -31,15 +31,18 @@ export function evalRule(el: Element | Document, rule: string): string {
   return node.textContent?.trim() ?? ''
 }
 
-export function applyRemoveRules(doc: Document, rules: string[] = []): void {
+export function applyRemoveRules(el: Element | Document, rules: string[] = []): void {
+  const doc = (el as Node).nodeType === 9 ? (el as Document) : (el as Element).ownerDocument
+  if (!doc) return
   const NodeFilter = doc.defaultView?.NodeFilter
   if (!NodeFilter) return
   for (const rule of rules) {
     if (rule.startsWith('css:')) {
-      doc.querySelectorAll(rule.slice(4)).forEach((n) => n.remove())
+      el.querySelectorAll(rule.slice(4)).forEach((n) => n.remove())
     } else if (rule.startsWith('regex:')) {
       const re = new RegExp(rule.slice(6), 'g')
-      const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
+      const root = (el as Node).nodeType === 9 ? (el as Document).body : (el as Element)
+      const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT)
       let n: Node | null
       while ((n = walker.nextNode())) {
         const t = n as Text

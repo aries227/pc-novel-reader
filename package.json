@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "简洁高效的 PC 端小说阅读器",
+  "author": "Codex",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

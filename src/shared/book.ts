@@ -69,14 +69,14 @@ export interface AiDefaults {
 }
 
 export interface Settings {
-  theme: 'light' | 'sepia' | 'dark' | 'green'
+  theme: 'light' | 'sepia' | 'dark' | 'green' | 'sunset' | 'ocean' | 'forest' | 'paper'
   fontSize: number
   lineHeight: number
   fontFamily: string
   customFont?: string
   backgroundImage?: string
   backgroundOpacity: number
-  mode: 'paged' | 'vertical' | 'scroll'
+  mode: 'paged' | 'vertical' | 'scroll' | 'hscroll'
   uploadPortMode: 'random' | 'fixed'
   uploadPort?: number
   maxUploadMb: number

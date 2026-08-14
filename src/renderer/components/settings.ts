@@ -8,7 +8,7 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
   overlay.innerHTML = `
     <div class="modal modal-wide">
       <h2>设置</h2>
-      <label>主题 <select data-set="theme"><option value="light">白</option><option value="sepia">米黄</option><option value="dark">夜间</option><option value="green">护眼绿</option></select></label>
+      <label>主题 <select data-set="theme"><option value="light">白</option><option value="sepia">米黄</option><option value="dark">夜间</option><option value="green">护眼绿</option><option value="sunset">日落</option><option value="ocean">海洋</option><option value="forest">森林</option><option value="paper">纸张</option></select></label>
       <label>默认字号 <input type="number" data-set="fontSize" min="12" max="32" /></label>
       <label>默认行距 <input type="number" data-set="lineHeight" min="1.2" max="2.6" step="0.1" /></label>
       <label>字体 <select data-set="fontFamily"><option value="system">系统默认</option><option value="宋体">宋体</option><option value="楷体">楷体</option><option value="黑体">黑体</option><option value="微软雅黑">微软雅黑</option><option value="custom">自定义字体</option></select></label>

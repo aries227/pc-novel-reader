@@ -35,3 +35,7 @@ export function computeColumnLayout(clientWidth: number, paddingX = 48): ColumnL
   const columnWidth = Math.max(320, clientWidth - paddingX * 2)
   return { columnWidth, columnGap: paddingX * 2 }
 }
+
+export function scrollHByWheel(el: HTMLElement, deltaY: number): void {
+  el.scrollLeft += deltaY
+}

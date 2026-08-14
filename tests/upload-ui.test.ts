@@ -44,7 +44,7 @@ function mockReader(): void {
       lookup: async () => ({ word: 'hello', translation: '你好' }),
       examples: async () => [],
       import: async () => ({ added: 1, total: 1 }),
-      stats: async () => 0
+      stats: async () => 0, examTags: async () => ({})
     },
     vocab: {
       list: async () => [],

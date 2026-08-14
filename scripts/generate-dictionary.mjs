@@ -28,6 +28,7 @@ console.log(`candidate lemmas: ${lemmas.length}`)
 
 const words = {}
 const forms = {}
+let examTags = {}
 let kept = 0
 for (const l of lemmas) {
   if (kept >= MAX_WORDS) break
@@ -53,6 +54,7 @@ console.log(`kept words: ${kept}, forms: ${Object.keys(forms).length}`)
 
 if (csvPath) {
   let tagCount = 0
+  examTags = {}
   await new Promise((resolve, reject) => {
     const rl = createInterface({ input: createReadStream(csvPath, 'utf8'), crlfDelay: Infinity })
     let first = true
@@ -63,6 +65,7 @@ if (csvPath) {
       const tag = (cols[7] ?? '').trim()
       if (w && tag && words[w]) {
         words[w].g = tag
+        examTags[w] = tag
         tagCount++
       }
     })
@@ -95,6 +98,7 @@ console.log(`words with examples: ${withExamples}`)
 await mkdir(outDir, { recursive: true })
 await writeFile(join(outDir, 'dictionary.json'), JSON.stringify({ words, forms }))
 await writeFile(join(outDir, 'examples.json'), JSON.stringify(examples))
+await writeFile(join(outDir, 'exam-tags.json'), JSON.stringify(examTags))
 console.log('written to', outDir)
 
 function parseCsvLine(line) {

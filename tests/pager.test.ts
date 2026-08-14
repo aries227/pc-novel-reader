@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { canNextVertical, canPrevVertical, computeColumnLayout, nextVerticalPage, prevVerticalPage } from '../src/renderer/reader/pager'
+import { canNextVertical, canPrevVertical, computeColumnLayout, nextVerticalPage, prevVerticalPage, scrollHByWheel } from '../src/renderer/reader/pager'
 
-function fakePage(over: Partial<{ scrollTop: number; clientHeight: number; scrollHeight: number }>): HTMLElement {
+function fakePage(over: Partial<{ scrollTop: number; clientHeight: number; scrollHeight: number; scrollLeft: number }>): HTMLElement {
   const el = {
     scrollTop: 0,
     clientHeight: 100,
@@ -47,5 +47,13 @@ describe('左右翻页列对齐', () => {
   })
   it('窗口过窄时保留最小列宽', () => {
     expect(computeColumnLayout(200).columnWidth).toBe(320)
+  })
+})
+
+describe('横向滑动', () => {
+  it('滚轮垂直增量转为横向滚动', () => {
+    const el = fakePage({ scrollLeft: 100 })
+    scrollHByWheel(el, 120)
+    expect(el.scrollLeft).toBe(220)
   })
 })

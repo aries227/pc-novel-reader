@@ -152,6 +152,7 @@ export function registerIpc(
     return dictionary.importFile(r.filePaths[0])
   })
   ipcMain.handle('dictionary:stats', () => dictionary.stats())
+  ipcMain.handle('dictionary:examTags', () => dictionary.examTags())
   ipcMain.handle('vocab:list', () => vocab.list())
   ipcMain.handle('vocab:add', (_e, input: Parameters<VocabularyStore['add']>[0]) => vocab.add(input))
   ipcMain.handle('vocab:remove', (_e, id: string) => vocab.remove(id))

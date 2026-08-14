@@ -41,7 +41,8 @@ const api: ReaderApi = {
     lookup: (word) => ipcRenderer.invoke('dictionary:lookup', word),
     examples: (word) => ipcRenderer.invoke('dictionary:examples', word),
     import: () => ipcRenderer.invoke('dictionary:import'),
-    stats: () => ipcRenderer.invoke('dictionary:stats')
+    stats: () => ipcRenderer.invoke('dictionary:stats'),
+    examTags: () => ipcRenderer.invoke('dictionary:examTags')
   },
   vocab: {
     list: () => ipcRenderer.invoke('vocab:list'),

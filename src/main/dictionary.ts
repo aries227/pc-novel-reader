@@ -18,6 +18,8 @@ export interface Dictionary {
   examples(word: string): Promise<ExamplePair[]>
   importFile(filePath: string): Promise<{ added: number; total: number }>
   stats(): Promise<number>
+  examTags(): Promise<Record<string, string>>
+  warmup(): Promise<void>
 }
 
 interface DictData {
@@ -199,6 +201,12 @@ export async function createDictionary(dir: string): Promise<Dictionary> {
     async stats() {
       await loadUser()
       return Object.keys(user.words).length
+    },
+    async examTags() {
+      return load<Record<string, string>>('exam-tags.json')
+    },
+    async warmup() {
+      await Promise.all([load<DictData>('dictionary.json'), load<Record<string, ExamplePair[]>>('examples.json'), load<Record<string, string>>('exam-tags.json'), loadUser()])
     }
   }
 }

@@ -41,4 +41,10 @@ describe('createDictionary', () => {
     expect(ex[0].cn).toContain('跑步')
     await expect(dict.examples('zzz')).resolves.toEqual([])
   })
+  it('返回考试标签表并可预热', async () => {
+    const dict = await createDictionary(FIXTURE)
+    await expect(dict.examTags()).resolves.toMatchObject({ college: 'cet6' })
+    await expect(dict.warmup()).resolves.toBeUndefined()
+    await expect(dict.lookup('college')).resolves.toBeNull()
+  })
 })

@@ -63,6 +63,7 @@ app.whenReady().then(async () => {
     vocab
   )
   createWindow()
+  void dictionary.warmup()
   checkForUpdatesOnStart()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

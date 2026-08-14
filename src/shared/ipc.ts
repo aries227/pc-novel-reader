@@ -108,6 +108,7 @@ export interface ReaderApi {
     examples(word: string): Promise<ExamplePair[]>
     import(): Promise<{ added: number; total: number }>
     stats(): Promise<number>
+    examTags(): Promise<Record<string, string>>
   }
   vocab: {
     list(): Promise<VocabEntry[]>

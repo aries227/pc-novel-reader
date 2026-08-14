@@ -152,8 +152,19 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
     EXAM_LEVELS.forEach(({ tag, label }) => {
       const item = document.createElement('label')
       item.className = 'exam-color-item'
-      item.innerHTML = `<span>${label}</span><input type="color" data-exam-color="${tag}" value="${next.examColors.colors[tag] ?? '#888888'}" />`
+      const enabled = next.examColors.enabledTags?.[tag] !== false
+      item.innerHTML = `<input type="checkbox" data-exam-tag="${tag}" ${enabled ? 'checked' : ''} /><span>${label}</span><input type="color" data-exam-color="${tag}" value="${next.examColors.colors[tag] ?? '#888888'}" />`
       box.appendChild(item)
+    })
+    box.querySelectorAll('[data-exam-tag]').forEach((el) => {
+      el.addEventListener('change', async () => {
+        const cur = await window.reader.settings.get()
+        const tag = (el as HTMLElement).dataset.examTag!
+        const next2 = await window.reader.settings.set({
+          examColors: { ...cur.examColors, enabledTags: { ...cur.examColors.enabledTags, [tag]: (el as HTMLInputElement).checked } }
+        })
+        renderExamColors(next2)
+      })
     })
     box.querySelectorAll('[data-exam-color]').forEach((el) => {
       el.addEventListener('change', async () => {

@@ -236,10 +236,9 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     const chapterHighlights = highlights.filter((h) => h.chapterIndex === chapterIndex)
     const sanitized = sanitizeHtml(chapter.html)
     const withHighlights = applyHighlights(sanitized, chapterHighlights)
-    pageEl.innerHTML =
-      settings.examColors?.enabled === false
-        ? withHighlights
-        : applyExamColors(withHighlights, examTags, settings.examColors?.colors)
+    const exam = settings.examColors
+    const activeTags = exam?.enabled === false ? {} : Object.fromEntries(Object.entries(examTags).filter(([, tag]) => exam?.enabledTags?.[tag] !== false))
+    pageEl.innerHTML = Object.keys(activeTags).length ? applyExamColors(withHighlights, activeTags, exam?.colors) : withHighlights
     pageEl.querySelectorAll<HTMLElement>('mark[data-highlight]').forEach((mark) => {
       mark.addEventListener('click', (e) => {
         e.stopPropagation()

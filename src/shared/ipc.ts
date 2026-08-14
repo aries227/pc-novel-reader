@@ -143,7 +143,10 @@ export interface ReaderApi {
     content(sourceId: string, chapterUrl: string): Promise<string>
     addBook(args: { sourceId: string; bookUrl: string; title: string; author?: string; cover?: string }): Promise<LibraryItem>
   }
-  web: { parse(url: string): Promise<LibraryItem> }
+  web: {
+    parse(url: string): Promise<LibraryItem>
+    toEpub(url: string): Promise<LibraryItem>
+  }
   update: {
     check(): Promise<void>
     install(): Promise<void>

@@ -73,7 +73,10 @@ const api: ReaderApi = {
     content: (sourceId, chapterUrl) => ipcRenderer.invoke('sources:content', sourceId, chapterUrl),
     addBook: (args) => ipcRenderer.invoke('sources:addBook', args)
   },
-  web: { parse: (url) => ipcRenderer.invoke('web:parse', url) },
+  web: {
+    parse: (url) => ipcRenderer.invoke('web:parse', url),
+    toEpub: (url) => ipcRenderer.invoke('web:toEpub', url)
+  },
   update: {
     check: () => ipcRenderer.invoke('update:check'),
     install: () => ipcRenderer.invoke('update:install'),

@@ -24,6 +24,7 @@ import { normalizeSource } from './sources/validate'
 import { translateText } from './translate'
 import type { UploadManager } from './upload-server'
 import type { VocabularyStore } from './vocabulary'
+import { buildEpub, convertWebToEpub } from './webtoepub'
 
 export function registerIpc(
   library: LibraryStore,
@@ -177,6 +178,14 @@ export function registerIpc(
     await writeFile(file, html, 'utf8')
     const items = await library.addFiles([file])
     items[0].meta.title = title
+    return items[0]
+  })
+  ipcMain.handle('web:toEpub', async (_e, url: string) => {
+    const book = await convertWebToEpub(url)
+    const file = join(booksDir, `${randomUUID()}.epub`)
+    await writeFile(file, Buffer.from(buildEpub({ title: book.title, chapters: book.chapters })))
+    const items = await library.addFiles([file])
+    if (items[0] && book.title) await library.rename(items[0].meta.id, book.title)
     return items[0]
   })
   ipcMain.handle('sources:list', () => readSources())

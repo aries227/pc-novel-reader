@@ -11,9 +11,11 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
   header.className = 'lib-header'
   header.innerHTML = `
     <h1>书架</h1>
+    <input class="lib-search" placeholder="搜索书名 / 作者" />
     <div class="lib-actions">
       <button data-act="add-files">打开文件</button>
       <button data-act="add-folder">导入文件夹</button>
+      <button data-act="webtoepub">网页转EPUB</button>
       <button data-act="web-parse">网页解析</button>
       <button data-act="sources">书源</button>
       <button data-act="upload">扫码上传</button>
@@ -32,13 +34,24 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
   }
 
   const items = await window.reader.library.list()
-  if (items.length === 0) {
-    const empty = document.createElement('div')
-    empty.className = 'lib-empty'
-    empty.textContent = '书架为空：点击“打开文件”或扫码上传书籍'
-    grid.appendChild(empty)
+  function renderGrid(list: LibraryItem[]): void {
+    grid.innerHTML = ''
+    if (list.length === 0) {
+      const empty = document.createElement('div')
+      empty.className = 'lib-empty'
+      empty.textContent = items.length === 0 ? '书架为空：点击“打开文件”或扫码上传书籍' : '没有匹配的书籍'
+      grid.appendChild(empty)
+    }
+    for (const item of list) grid.appendChild(bookCard(item, onOpen, refresh))
   }
-  for (const item of items) grid.appendChild(bookCard(item, onOpen, refresh))
+  renderGrid(items)
+  header.querySelector('.lib-search')!.addEventListener('input', (e) => {
+    const q = (e.target as HTMLInputElement).value.trim().toLowerCase()
+    const filtered = q
+      ? items.filter((i) => i.meta.title.toLowerCase().includes(q) || i.meta.author.toLowerCase().includes(q))
+      : items
+    renderGrid(filtered)
+  })
 
   header.querySelector('[data-act="add-files"]')!.addEventListener('click', async () => {
     const paths = await window.reader.dialog.openFiles()
@@ -50,6 +63,23 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
   header.querySelector('[data-act="add-folder"]')!.addEventListener('click', async () => {
     await window.reader.library.addFolder()
     await renderLibrary(container, onOpen)
+  })
+  header.querySelector('[data-act="webtoepub"]')!.addEventListener('click', async () => {
+    const url = await promptModal('输入小说目录页 URL（WebToEpub）')
+    if (!url) return
+    const btn = header.querySelector('[data-act="webtoepub"]') as HTMLButtonElement
+    btn.disabled = true
+    btn.textContent = '转换中…'
+    try {
+      const item = await window.reader.web.toEpub(url)
+      alert(`已转换《${item.meta.title}》并加入书架`)
+      await refresh()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '转换失败')
+    } finally {
+      btn.disabled = false
+      btn.textContent = '网页转EPUB'
+    }
   })
   header.querySelector('[data-act="export"]')!.addEventListener('click', () => window.reader.library.export())
   header.querySelector('[data-act="import"]')!.addEventListener('click', async () => {

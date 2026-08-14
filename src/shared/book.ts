@@ -71,6 +71,7 @@ export interface AiDefaults {
 export interface ExamColorSettings {
   enabled: boolean
   colors: Record<string, string>
+  enabledTags: Record<string, boolean>
 }
 
 export interface ShortcutSettings {
@@ -137,7 +138,8 @@ export const DEFAULT_SETTINGS: Settings = {
       ielts: '#00838f',
       toefl: '#c2185b',
       gre: '#b71c1c'
-    }
+    },
+    enabledTags: { zk: true, gk: true, cet4: true, cet6: true, ky: true, ielts: true, toefl: true, gre: true }
   },
   shortcuts: { next: 'ArrowRight,PageDown,space', prev: 'ArrowLeft,PageUp', back: 'Escape' }
 }

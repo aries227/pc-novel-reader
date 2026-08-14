@@ -118,6 +118,8 @@ body[data-theme="green"] { --bg: #e8f0e3; --fg: #2f3b2f; --accent: #4f7a4f; }
 .dict-tags { margin: 4px 0; }
 .dict-tag { display: inline-block; margin: 2px 4px 0 0; padding: 1px 8px; border-radius: 10px; background: #eef2ff; color: #3b5bdb; font-size: 11px; }
 .side-panel { width: 380px; max-width: 45vw; border-left: 1px solid rgba(0,0,0,.1); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.side-resizer { width: 5px; flex: 0 0 auto; cursor: ew-resize; background: transparent; }
+.side-resizer:hover { background: rgba(59, 91, 219, .25); }
 .side-panel.hidden { display: none; }
 .side-tabs { display: flex; align-items: center; border-bottom: 1px solid rgba(0,0,0,.1); }
 .side-tabs button { flex: 1; padding: 9px 4px; border: none; background: transparent; color: var(--text); cursor: pointer; font-size: 13px; }

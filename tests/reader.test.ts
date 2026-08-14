@@ -124,4 +124,17 @@ describe('renderReader', () => {
     expect(container.querySelector('.reader-page')?.querySelector('script')).toBeNull()
     expect(window.reader.book.saveProgress).toHaveBeenCalled()
   })
+  it('右侧面板可通过拖拽调整宽度', async () => {
+    mockReader()
+    localStorage.removeItem('jian-yue-side-width')
+    const container = document.createElement('div')
+    await renderReader(container, 'b1', () => undefined)
+    const resizer = container.querySelector('.side-resizer') as HTMLElement
+    expect(resizer).not.toBeNull()
+    resizer.dispatchEvent(new MouseEvent('mousedown', { clientX: 500, bubbles: true }))
+    window.dispatchEvent(new MouseEvent('mousemove', { clientX: 300 }))
+    window.dispatchEvent(new MouseEvent('mouseup'))
+    const panel = container.querySelector('.side-panel') as HTMLElement
+    expect(panel.style.width).toBe('580px')
+  })
 })

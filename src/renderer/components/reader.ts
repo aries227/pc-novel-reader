@@ -1,7 +1,7 @@
 import type { Highlight, Settings } from '../../shared/book'
 import type { PdfControls } from '../reader/pdf-view'
 import { applyHighlights } from '../reader/highlight'
-import { canNext, canNextVertical, canPrevVertical, nextPage, nextVerticalPage, prevPage, prevVerticalPage } from '../reader/pager'
+import { canNext, canNextVertical, canPrevVertical, computeColumnLayout, nextPage, nextVerticalPage, prevPage, prevVerticalPage } from '../reader/pager'
 import { sanitizeHtml } from '../reader/sanitize'
 import { applySettingsToBody, resolveFontFamily } from '../theme'
 import { createQuizWidget, openVocabModal } from './study'
@@ -43,6 +43,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <label>行距 <input type="range" data-set="lineHeight" min="1.2" max="2.6" step="0.1" /></label>
         <label>模式 <select data-set="mode"><option value="paged">左右翻页</option><option value="vertical">上下翻页</option><option value="scroll">滚动</option></select></label>
       </div>
+      <div class="side-resizer" title="拖动调整宽度"></div>
       <aside class="side-panel hidden">
         <div class="side-tabs">
           <button data-tab="translate">翻译</button>
@@ -77,6 +78,43 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const translateContent = sidePanel.querySelector('.translate-content') as HTMLElement
   const dictContent = sidePanel.querySelector('.dict-content') as HTMLElement
   const quizPane = sidePanel.querySelector('[data-pane="quiz"] .quiz-widget') as HTMLElement
+  const resizerEl = root.querySelector('.side-resizer') as HTMLElement
+
+  const savedWidth = Number(localStorage.getItem('jian-yue-side-width'))
+  sidePanel.style.width = savedWidth >= 280 && savedWidth <= 640 ? `${savedWidth}px` : '380px'
+
+  function applyPagedLayout(): void {
+    if (pdf || settings.mode !== 'paged') {
+      pageEl.style.columnWidth = ''
+      pageEl.style.columnGap = ''
+      return
+    }
+    const { columnWidth, columnGap } = computeColumnLayout(pageEl.clientWidth)
+    pageEl.style.columnWidth = `${columnWidth}px`
+    pageEl.style.columnGap = `${columnGap}px`
+  }
+
+  let dragging = false
+  let dragStartX = 0
+  let dragStartWidth = 380
+  resizerEl.addEventListener('mousedown', (e) => {
+    dragging = true
+    dragStartX = e.clientX
+    dragStartWidth = parseFloat(sidePanel.style.width) || 380
+    document.body.style.userSelect = 'none'
+    e.preventDefault()
+  })
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return
+    const width = Math.min(640, Math.max(280, dragStartWidth + (dragStartX - e.clientX)))
+    sidePanel.style.width = `${width}px`
+  })
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return
+    dragging = false
+    document.body.style.userSelect = ''
+    localStorage.setItem('jian-yue-side-width', String(parseFloat(sidePanel.style.width) || 380))
+  })
 
   function showSideTab(tab: 'translate' | 'dict' | 'quiz'): void {
     sidePanel.classList.remove('hidden')
@@ -104,7 +142,9 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
       })
     })
     pageEl.dataset.mode = settings.mode
+    applyPagedLayout()
     pageEl.scrollLeft = 0
+    pageEl.scrollTop = 0
     pctEl.textContent = `${Math.round((chapterIndex / chapters.length) * 100)}%`
     progressEl.value = String(Math.round((chapterIndex / chapters.length) * 100))
     void window.reader.book.saveProgress({ bookId, chapterIndex, updatedAt: Date.now() })
@@ -303,6 +343,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         [key]: key === 'fontSize' || key === 'lineHeight' ? Number(raw) : raw
       } as Partial<Settings>)
       applyTheme(settings)
+      applyPagedLayout()
     })
   })
 
@@ -342,6 +383,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     }
   }
   document.addEventListener('keydown', onKey)
+  window.addEventListener('resize', applyPagedLayout)
 
   progressEl.addEventListener('input', () => {
     if (pdf) {

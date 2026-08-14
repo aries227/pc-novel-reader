@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canNextVertical, canPrevVertical, nextVerticalPage, prevVerticalPage } from '../src/renderer/reader/pager'
+import { canNextVertical, canPrevVertical, computeColumnLayout, nextVerticalPage, prevVerticalPage } from '../src/renderer/reader/pager'
 
 function fakePage(over: Partial<{ scrollTop: number; clientHeight: number; scrollHeight: number }>): HTMLElement {
   const el = {
@@ -38,5 +38,14 @@ describe('垂直翻页', () => {
   it('在顶部时不能上一页', () => {
     const el = fakePage({ scrollTop: 0, clientHeight: 100, scrollHeight: 500 })
     expect(canPrevVertical(el)).toBe(false)
+  })
+})
+
+describe('左右翻页列对齐', () => {
+  it('列宽等于内容区宽度，列间距覆盖两侧内边距', () => {
+    expect(computeColumnLayout(1200)).toEqual({ columnWidth: 1104, columnGap: 96 })
+  })
+  it('窗口过窄时保留最小列宽', () => {
+    expect(computeColumnLayout(200).columnWidth).toBe(320)
   })
 })

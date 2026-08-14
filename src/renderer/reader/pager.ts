@@ -25,3 +25,13 @@ export function canNextVertical(el: HTMLElement): boolean {
 export function canPrevVertical(el: HTMLElement): boolean {
   return el.scrollTop > 4
 }
+
+export interface ColumnLayout {
+  columnWidth: number
+  columnGap: number
+}
+
+export function computeColumnLayout(clientWidth: number, paddingX = 48): ColumnLayout {
+  const columnWidth = Math.max(320, clientWidth - paddingX * 2)
+  return { columnWidth, columnGap: paddingX * 2 }
+}

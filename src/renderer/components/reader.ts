@@ -102,6 +102,16 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     pageEl.style.columnGap = `${columnGap}px`
   }
 
+  function reflowPaged(): void {
+    const oldStep = (parseFloat(pageEl.style.columnWidth || '0') || 0) + (parseFloat(pageEl.style.columnGap || '0') || 0)
+    const page = oldStep > 0 ? Math.max(0, Math.round(pageEl.scrollLeft / oldStep)) : 0
+    applyPagedLayout()
+    const w = parseFloat(pageEl.style.columnWidth || '0')
+    const g = parseFloat(pageEl.style.columnGap || '0')
+    const step = w > 0 ? w + g : pageEl.clientWidth
+    pageEl.scrollLeft = page * step
+  }
+
   let dragging = false
   let dragStartX = 0
   let dragStartWidth = 380
@@ -116,7 +126,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     if (!dragging) return
     const width = Math.min(640, Math.max(280, dragStartWidth + (dragStartX - e.clientX)))
     sidePanel.style.width = `${width}px`
-    applyPagedLayout()
+    reflowPaged()
   })
   window.addEventListener('mouseup', () => {
     if (!dragging) return
@@ -129,7 +139,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     sidePanel.classList.remove('hidden')
     sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab))
     sidePanel.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('hidden', (p as HTMLElement).dataset.pane !== tab))
-    requestAnimationFrame(() => applyPagedLayout())
+    requestAnimationFrame(() => reflowPaged())
   }
 
   function applyTheme(s: Settings): void {
@@ -193,6 +203,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
       quizPane.dataset.ready = '1'
       void createQuizWidget(quizPane, {
         bookId,
+        chapterIndex,
         chapterTitle: chapter?.title ?? meta.title,
         chapterText: pageEl.innerText
       })
@@ -215,7 +226,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   })
   root.querySelector('[data-act="side-close"]')!.addEventListener('click', () => {
     sidePanel.classList.add('hidden')
-    applyPagedLayout()
+    reflowPaged()
   })
   sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => showSideTab((btn as HTMLElement).dataset.tab as 'translate' | 'dict' | 'quiz'))
@@ -425,7 +436,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     }
   }
   document.addEventListener('keydown', onKey)
-  window.addEventListener('resize', applyPagedLayout)
+  window.addEventListener('resize', reflowPaged)
   pageEl.addEventListener('wheel', (e) => {
     if (settings.mode !== 'hscroll') return
     e.preventDefault()

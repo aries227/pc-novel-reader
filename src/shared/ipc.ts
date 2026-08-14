@@ -101,7 +101,15 @@ export interface ReaderApi {
     test(provider: AiProvider): Promise<{ ok: boolean; message: string; models: string[] }>
     fetchModels(provider: AiProvider): Promise<string[]>
     chat(req: AiChatRequest): Promise<string>
-    quiz(req: { bookId: string; chapterTitle: string; chapterText: string; count?: number; difficulty?: string }): Promise<Quiz>
+    quiz(req: {
+      bookId: string
+      chapterTitle: string
+      chapterText: string
+      chapterIndex?: number
+      count?: number
+      difficulty?: string
+      force?: boolean
+    }): Promise<Quiz>
   }
   dictionary: {
     lookup(word: string): Promise<DictEntry | null>

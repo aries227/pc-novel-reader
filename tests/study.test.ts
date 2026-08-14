@@ -145,8 +145,10 @@ describe('openQuizModal', () => {
   it('重新生成会再次调用 AI', async () => {
     const mock = baseMock()
     let calls = 0
-    mock.ai.quiz = async () => {
+    const flags: { force?: boolean }[] = []
+    mock.ai.quiz = async (req) => {
       calls++
+      flags.push({ force: req.force })
       return { title: `第${calls}套`, questions: [{ id: 'q1', type: 'choice', question: 'Q', options: ['A', 'B'], answer: 'A', explanation: 'E' }] }
     }
     install(mock)
@@ -156,6 +158,8 @@ describe('openQuizModal', () => {
     ;(container.querySelector('[data-act="regenerate"]') as HTMLButtonElement).click()
     await tick()
     expect(calls).toBe(2)
+    expect(flags[0].force).toBe(false)
+    expect(flags[1].force).toBe(true)
     expect(container.querySelector('.quiz-body h3')?.textContent).toContain('第2套')
   })
 })

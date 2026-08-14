@@ -91,6 +91,7 @@ export interface QuizModalOptions {
   bookId: string
   chapterTitle: string
   chapterText: string
+  chapterIndex?: number
 }
 
 export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions): Promise<void> {
@@ -102,11 +103,16 @@ export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions
       <label>题量 <select data-quiz-count></select></label>
       <label>难度 <select data-quiz-difficulty></select></label>
     </div>
+    <details class="quiz-passage">
+      <summary>本章原文（点开对照着做）</summary>
+      <div class="quiz-passage-text"></div>
+    </details>
     <div class="quiz-body">正在生成练习…（需在设置中配置练习用的 AI 供应商与 Key）</div>
     <div class="quiz-actions">
       <button data-act="submit">提交</button>
       <button data-act="regenerate">重新生成</button>
     </div>`
+  ;(host.querySelector('.quiz-passage-text') as HTMLElement).textContent = opts.chapterText.slice(0, 8000)
 
   const countSel = host.querySelector('[data-quiz-count]') as HTMLSelectElement
   for (let i = 1; i <= 12; i++) {
@@ -130,11 +136,17 @@ export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions
   let quiz: Quiz | null = null
   const answers = new Map<string, string>()
 
-  async function generate(): Promise<void> {
+  async function generate(force: boolean): Promise<void> {
     const body = host.querySelector('.quiz-body') as HTMLElement
     body.textContent = '正在生成练习…（需在设置中配置练习用的 AI 供应商与 Key）'
     try {
-      quiz = await window.reader.ai.quiz({ ...opts, count: quizCount, difficulty: quizDifficulty })
+      quiz = await window.reader.ai.quiz({
+        ...opts,
+        chapterIndex: opts.chapterIndex ?? 0,
+        count: quizCount,
+        difficulty: quizDifficulty,
+        force
+      })
       answers.clear()
       renderQuiz()
     } catch (err) {
@@ -188,9 +200,9 @@ export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions
     if (h3 && quiz) h3.textContent = `${quiz.title}（得分 ${score}/${quiz.questions.length}）`
   })
   host.querySelector('[data-act="regenerate"]')!.addEventListener('click', () => {
-    void generate()
+    void generate(true)
   })
-  void generate()
+  void generate(false)
 }
 
 export async function openQuizModal(container: HTMLElement, opts: QuizModalOptions): Promise<void> {

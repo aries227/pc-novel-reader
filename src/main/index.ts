@@ -8,6 +8,7 @@ import { registerIpc } from './ipc'
 import { createUploadServer } from './upload-server'
 import { checkForUpdatesOnStart, registerUpdater } from './updater'
 import { VocabularyStore } from './vocabulary'
+import { QuizStore } from './quiz-store'
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'reader-file', privileges: { secure: true, supportFetchAPI: true, stream: true, bypassCSP: false } }
@@ -46,6 +47,7 @@ app.whenReady().then(async () => {
   const dictDir = app.isPackaged ? join(process.resourcesPath, 'resources') : join(app.getAppPath(), 'resources')
   const dictionary = await createDictionary(dictDir)
   const vocab = new VocabularyStore(userData)
+  const quizStore = new QuizStore(userData)
   registerUpdater()
   uploadManager = createUploadServer(
     { inbox: join(userData, 'upload-inbox'), books: join(userData, 'books') },
@@ -60,7 +62,8 @@ app.whenReady().then(async () => {
     join(userData, 'cache'),
     join(userData, 'assets'),
     dictionary,
-    vocab
+    vocab,
+    quizStore
   )
   createWindow()
   void dictionary.warmup()

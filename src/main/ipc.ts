@@ -9,6 +9,7 @@ import type { BookSource } from '../shared/source'
 import type { Dictionary } from './dictionary'
 import { LibraryStore } from './library'
 import { generateQuiz } from './quiz'
+import { QuizStore } from './quiz-store'
 import { pickBackgroundImage, pickFontFile } from './assets'
 import { fetchHtml } from './network'
 import { parseDocx } from './parsers/docx'
@@ -33,7 +34,8 @@ export function registerIpc(
   sourceCacheDir: string,
   assetsDir: string,
   dictionary: Dictionary,
-  vocab: VocabularyStore
+  vocab: VocabularyStore,
+  quizStore: QuizStore
 ): void {
   const sourceEngine = createCachedEngine(sourceCacheDir)
 
@@ -121,20 +123,29 @@ export function registerIpc(
       jsonMode: req.jsonMode
     })
   })
-  ipcMain.handle('ai:quiz', async (_e, req: { bookId: string; chapterTitle: string; chapterText: string; count?: number; difficulty?: string }) => {
+  ipcMain.handle('ai:quiz', async (_e, req: { bookId: string; chapterTitle: string; chapterText: string; chapterIndex?: number; count?: number; difficulty?: string; force?: boolean }) => {
     const s = await settings.get()
     const { provider, model } = resolveAiProvider(s, 'quiz')
     if (!provider.apiKey?.trim()) throw new Error('请先在设置中填写 API Key')
-    return generateQuiz({
+    const count = req.count ?? s.aiDefaults.quizCount ?? 4
+    const difficulty = req.difficulty ?? s.aiDefaults.quizDifficulty ?? '通用'
+    const chapterIndex = req.chapterIndex ?? 0
+    if (!req.force) {
+      const saved = await quizStore.get(req.bookId, chapterIndex, count, difficulty)
+      if (saved) return saved
+    }
+    const quiz = await generateQuiz({
       apiKey: provider.apiKey,
       baseUrl: provider.baseUrl,
       model,
       chapterTitle: req.chapterTitle,
       chapterText: req.chapterText,
-      count: req.count ?? s.aiDefaults.quizCount ?? 4,
-      difficulty: req.difficulty ?? s.aiDefaults.quizDifficulty ?? '通用',
+      count,
+      difficulty,
       customPrompt: s.aiDefaults.customQuizPrompt
     })
+    await quizStore.save(req.bookId, chapterIndex, count, difficulty, quiz)
+    return quiz
   })
   ipcMain.handle('dictionary:lookup', (_e, word: string) => dictionary.lookup(word))
   ipcMain.handle('dictionary:examples', (_e, word: string) => dictionary.examples(word))

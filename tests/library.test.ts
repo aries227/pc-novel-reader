@@ -35,6 +35,21 @@ describe('LibraryStore', () => {
     expect(loaded[0].progress?.chapterIndex).toBe(1)
     expect(loaded[0].bookmarks[0].id).toBe(bookmark.id)
   })
+  it('重命名书籍并持久化', async () => {
+    const store = new LibraryStore(dir)
+    const id = (await store.list())[0].meta.id
+    await store.rename(id, '新书名')
+    const loaded = await new LibraryStore(dir).list()
+    expect(loaded[0].meta.title).toBe('新书名')
+  })
+  it('添加与删除高亮', async () => {
+    const store = new LibraryStore(dir)
+    const id = (await store.list())[0].meta.id
+    const hl = await store.addHighlight({ bookId: id, chapterIndex: 0, text: '内容', color: 'yellow' })
+    expect((await store.listHighlights(id))[0].id).toBe(hl.id)
+    await store.removeHighlight(hl.id)
+    expect(await store.listHighlights(id)).toHaveLength(0)
+  })
 })
 
 describe('SettingsStore', () => {

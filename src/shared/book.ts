@@ -37,7 +37,18 @@ export interface Bookmark {
   createdAt: number
 }
 
-export interface LibraryItem { meta: BookMeta; progress?: Progress; bookmarks: Bookmark[] }
+export type HighlightColor = 'yellow' | 'green' | 'pink' | 'blue'
+
+export interface Highlight {
+  id: string
+  bookId: string
+  chapterIndex: number
+  text: string
+  color: HighlightColor
+  createdAt: number
+}
+
+export interface LibraryItem { meta: BookMeta; progress?: Progress; bookmarks: Bookmark[]; highlights?: Highlight[] }
 
 export interface AiProvider {
   id: string
@@ -52,6 +63,9 @@ export interface AiDefaults {
   translateModel: string
   quizProviderId: string
   quizModel: string
+  quizCount: number
+  quizDifficulty: string
+  customQuizPrompt?: string
 }
 
 export interface Settings {
@@ -62,7 +76,7 @@ export interface Settings {
   customFont?: string
   backgroundImage?: string
   backgroundOpacity: number
-  mode: 'paged' | 'scroll'
+  mode: 'paged' | 'vertical' | 'scroll'
   uploadPortMode: 'random' | 'fixed'
   uploadPort?: number
   maxUploadMb: number
@@ -95,7 +109,9 @@ export const DEFAULT_SETTINGS: Settings = {
     translateProviderId: 'deepseek',
     translateModel: 'deepseek-chat',
     quizProviderId: 'deepseek',
-    quizModel: 'deepseek-chat'
+    quizModel: 'deepseek-chat',
+    quizCount: 4,
+    quizDifficulty: '通用'
   }
 }
 
@@ -118,7 +134,10 @@ export function ensureAiSettings(s: Settings): Settings {
     translateProviderId: s.aiDefaults?.translateProviderId ?? '',
     translateModel: s.aiDefaults?.translateModel ?? '',
     quizProviderId: s.aiDefaults?.quizProviderId ?? '',
-    quizModel: s.aiDefaults?.quizModel ?? ''
+    quizModel: s.aiDefaults?.quizModel ?? '',
+    quizCount: s.aiDefaults?.quizCount ?? 4,
+    quizDifficulty: s.aiDefaults?.quizDifficulty ?? '通用',
+    customQuizPrompt: s.aiDefaults?.customQuizPrompt
   }
   const first = providers[0]
   const pick = (id: string, model: string): { id: string; model: string } => {
@@ -131,6 +150,7 @@ export function ensureAiSettings(s: Settings): Settings {
     ...s,
     aiProviders: providers,
     aiDefaults: {
+      ...def,
       translateProviderId: t.id,
       translateModel: t.model,
       quizProviderId: q.id,

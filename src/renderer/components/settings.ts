@@ -28,6 +28,9 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
         <label>翻译默认模型 <input data-ai-default="translateModel" placeholder="如 deepseek-chat" /></label>
         <label>练习默认供应商 <select data-ai-default="quizProvider"></select></label>
         <label>练习默认模型 <input data-ai-default="quizModel" placeholder="如 deepseek-chat" /></label>
+        <label>练习题量 <select data-ai-default="quizCount"></select></label>
+        <label>练习难度 <select data-ai-default="quizDifficulty"></select></label>
+        <label>自定义提示词 <textarea data-ai-default="quizPrompt" rows="3" placeholder="可选：覆盖默认出题指令"></textarea></label>
         <label>翻译目标 <select data-set="translateTarget"><option>中文</option><option>英文</option><option>日文</option><option>韩文</option></select></label>
       </div>
       <label>上传端口 <select data-set="uploadPortMode"><option value="random">随机</option><option value="fixed">固定</option></select></label>
@@ -100,6 +103,25 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
     fillDefaultSelect(qSel, next.aiProviders, next.aiDefaults.quizProviderId)
     ;(overlay.querySelector('[data-ai-default="translateModel"]') as HTMLInputElement).value = next.aiDefaults.translateModel
     ;(overlay.querySelector('[data-ai-default="quizModel"]') as HTMLInputElement).value = next.aiDefaults.quizModel
+    const countSel = overlay.querySelector('[data-ai-default="quizCount"]') as HTMLSelectElement
+    countSel.innerHTML = ''
+    for (let i = 1; i <= 12; i++) {
+      const opt = document.createElement('option')
+      opt.value = String(i)
+      opt.textContent = `${i} 道`
+      opt.selected = i === next.aiDefaults.quizCount
+      countSel.appendChild(opt)
+    }
+    const diffSel = overlay.querySelector('[data-ai-default="quizDifficulty"]') as HTMLSelectElement
+    diffSel.innerHTML = ''
+    ;['通用', '初中', '高中', '四级', '六级', '考研', '雅思', '托福', 'GRE'].forEach((d) => {
+      const opt = document.createElement('option')
+      opt.value = d
+      opt.textContent = d
+      opt.selected = d === next.aiDefaults.quizDifficulty
+      diffSel.appendChild(opt)
+    })
+    ;(overlay.querySelector('[data-ai-default="quizPrompt"]') as HTMLTextAreaElement).value = next.aiDefaults.customQuizPrompt ?? ''
     wireProviderCards()
   }
 
@@ -186,6 +208,28 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
   overlay.querySelector('[data-ai-default="quizModel"]')!.addEventListener('change', async (e) => {
     const next = await window.reader.settings.set({
       aiDefaults: { ...(await window.reader.settings.get()).aiDefaults, quizModel: (e.target as HTMLInputElement).value.trim() }
+    })
+    renderAi(next)
+  })
+
+  overlay.querySelector('[data-ai-default="quizCount"]')!.addEventListener('change', async (e) => {
+    const next = await window.reader.settings.set({
+      aiDefaults: { ...(await window.reader.settings.get()).aiDefaults, quizCount: Number((e.target as HTMLSelectElement).value) }
+    })
+    renderAi(next)
+  })
+
+  overlay.querySelector('[data-ai-default="quizDifficulty"]')!.addEventListener('change', async (e) => {
+    const next = await window.reader.settings.set({
+      aiDefaults: { ...(await window.reader.settings.get()).aiDefaults, quizDifficulty: (e.target as HTMLSelectElement).value }
+    })
+    renderAi(next)
+  })
+
+  overlay.querySelector('[data-ai-default="quizPrompt"]')!.addEventListener('change', async (e) => {
+    const value = (e.target as HTMLTextAreaElement).value.trim()
+    const next = await window.reader.settings.set({
+      aiDefaults: { ...(await window.reader.settings.get()).aiDefaults, customQuizPrompt: value || undefined }
     })
     renderAi(next)
   })

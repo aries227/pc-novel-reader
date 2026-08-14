@@ -69,6 +69,7 @@ export function registerIpc(
     return library.addFiles(files)
   })
   ipcMain.handle('library:remove', (_e, id: string) => library.remove(id))
+  ipcMain.handle('library:rename', (_e, id: string, title: string) => library.rename(id, title))
   ipcMain.handle('library:clear', () => library.clear())
   ipcMain.handle('library:import', async () => {
     const win = BrowserWindow.getFocusedWindow()
@@ -120,7 +121,7 @@ export function registerIpc(
       jsonMode: req.jsonMode
     })
   })
-  ipcMain.handle('ai:quiz', async (_e, req: { bookId: string; chapterTitle: string; chapterText: string }) => {
+  ipcMain.handle('ai:quiz', async (_e, req: { bookId: string; chapterTitle: string; chapterText: string; count?: number; difficulty?: string }) => {
     const s = await settings.get()
     const { provider, model } = resolveAiProvider(s, 'quiz')
     if (!provider.apiKey?.trim()) throw new Error('请先在设置中填写 API Key')
@@ -129,11 +130,28 @@ export function registerIpc(
       baseUrl: provider.baseUrl,
       model,
       chapterTitle: req.chapterTitle,
-      chapterText: req.chapterText
+      chapterText: req.chapterText,
+      count: req.count ?? s.aiDefaults.quizCount ?? 4,
+      difficulty: req.difficulty ?? s.aiDefaults.quizDifficulty ?? '通用',
+      customPrompt: s.aiDefaults.customQuizPrompt
     })
   })
   ipcMain.handle('dictionary:lookup', (_e, word: string) => dictionary.lookup(word))
   ipcMain.handle('dictionary:examples', (_e, word: string) => dictionary.examples(word))
+  ipcMain.handle('dictionary:import', async () => {
+    const win = BrowserWindow.getFocusedWindow()
+    const r = await dialog.showOpenDialog(win!, {
+      title: '导入词典',
+      properties: ['openFile'],
+      filters: [
+        { name: '词典文件', extensions: ['json', 'csv', 'txt'] },
+        { name: '所有文件', extensions: ['*'] }
+      ]
+    })
+    if (r.canceled || r.filePaths.length === 0) return { added: 0, total: await dictionary.stats() }
+    return dictionary.importFile(r.filePaths[0])
+  })
+  ipcMain.handle('dictionary:stats', () => dictionary.stats())
   ipcMain.handle('vocab:list', () => vocab.list())
   ipcMain.handle('vocab:add', (_e, input: Parameters<VocabularyStore['add']>[0]) => vocab.add(input))
   ipcMain.handle('vocab:remove', (_e, id: string) => vocab.remove(id))
@@ -249,5 +267,8 @@ export function registerIpc(
   ipcMain.handle('book:listBookmarks', async (_e, id: string) => (await library.get(id))?.bookmarks ?? [])
   ipcMain.handle('book:addBookmark', (_e, b) => library.addBookmark(b))
   ipcMain.handle('book:removeBookmark', (_e, id: string) => library.removeBookmark(id))
+  ipcMain.handle('book:listHighlights', (_e, id: string) => library.listHighlights(id))
+  ipcMain.handle('book:addHighlight', (_e, b) => library.addHighlight(b))
+  ipcMain.handle('book:removeHighlight', (_e, id: string) => library.removeHighlight(id))
   ipcMain.on('app:quit', () => BrowserWindow.getFocusedWindow()?.close())
 }

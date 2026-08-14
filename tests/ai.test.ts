@@ -98,7 +98,7 @@ describe('resolveAiProvider', () => {
     const s = {
       ...DEFAULT_SETTINGS,
       aiProviders: [{ id: 'a', name: 'A', baseUrl: 'https://a.example', apiKey: 'k', models: ['a1'] }],
-      aiDefaults: { translateProviderId: 'a', translateModel: 'a1', quizProviderId: 'a', quizModel: 'a1' }
+      aiDefaults: { translateProviderId: 'a', translateModel: 'a1', quizProviderId: 'a', quizModel: 'a1', quizCount: 4, quizDifficulty: '通用' }
     }
     const r = resolveAiProvider(s, 'translate')
     expect(r.provider.id).toBe('a')
@@ -108,12 +108,12 @@ describe('resolveAiProvider', () => {
     const s = {
       ...DEFAULT_SETTINGS,
       aiProviders: [{ id: 'a', name: 'A', baseUrl: 'https://a.example', apiKey: 'k', models: ['a1'] }],
-      aiDefaults: { translateProviderId: 'missing', translateModel: '', quizProviderId: 'missing', quizModel: '' }
+      aiDefaults: { translateProviderId: 'missing', translateModel: '', quizProviderId: 'missing', quizModel: '', quizCount: 4, quizDifficulty: '通用' }
     }
     expect(resolveAiProvider(s, 'translate').provider.id).toBe('a')
   })
   it('没有任何供应商时抛出中文错误', () => {
-    const s = { ...DEFAULT_SETTINGS, aiProviders: [], aiDefaults: { translateProviderId: '', translateModel: '', quizProviderId: '', quizModel: '' } }
+    const s = { ...DEFAULT_SETTINGS, aiProviders: [], aiDefaults: { translateProviderId: '', translateModel: '', quizProviderId: '', quizModel: '', quizCount: 4, quizDifficulty: '通用' } }
     expect(() => resolveAiProvider(s, 'translate')).toThrow('AI 供应商')
   })
 })

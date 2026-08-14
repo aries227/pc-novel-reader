@@ -22,9 +22,18 @@ export interface QuizOptions {
   model: string
   chapterTitle: string
   chapterText: string
+  count?: number
+  difficulty?: string
+  customPrompt?: string
 }
 
 export async function generateQuiz(opts: QuizOptions): Promise<Quiz> {
+  const count = Math.min(12, Math.max(1, Math.round(opts.count ?? 4)))
+  const difficulty = opts.difficulty?.trim() || '通用'
+  const customPrompt = opts.customPrompt?.trim()
+  const system = customPrompt
+    ? `${customPrompt}\n\n必须只输出 JSON，格式：{"title":"题目标题","questions":[{"type":"reading|choice|translation|grammar","question":"题干","options":["选项A","选项B"],"answer":"正确答案","explanation":"中文解析"}]}。reading 和 choice 必须有至少 2 个选项，translation 的 answer 为参考译文。`
+    : `你是一位英语学习出题老师。请根据用户提供的章节内容生成共 ${count} 道题，其中 1 道阅读理解题和 ${count - 1} 道练习题（选择题/翻译题/语法题混合），难度级别：${difficulty}，全部基于本章内容，不要凭空编造。只输出 JSON，不要输出其他文字。JSON 格式：{"title":"题目标题","questions":[{"type":"reading|choice|translation|grammar","question":"题干","options":["选项A","选项B"],"answer":"正确答案","explanation":"中文解析"}]}。reading 和 choice 必须有至少 2 个选项，translation 的 answer 为参考译文，grammar 的 answer 为答案。`
   const content = await chatCompletion({
     baseUrl: opts.baseUrl,
     apiKey: opts.apiKey,
@@ -34,8 +43,7 @@ export async function generateQuiz(opts: QuizOptions): Promise<Quiz> {
     messages: [
       {
         role: 'system',
-        content:
-          '你是一位英语学习出题老师。请根据用户提供的章节内容生成 1 道阅读理解题和 3 道练习题（选择题/翻译题/语法题混合），全部基于本章内容，不要凭空编造。只输出 JSON，不要输出其他文字。JSON 格式：{"title":"题目标题","questions":[{"type":"reading|choice|translation|grammar","question":"题干","options":["选项A","选项B"],"answer":"正确答案","explanation":"中文解析"}]}。reading 和 choice 必须有至少 2 个选项，translation 的 answer 为参考译文，grammar 的 answer 为答案。'
+        content: system
       },
       {
         role: 'user',

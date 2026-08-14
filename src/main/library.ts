@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import type { Bookmark, BookMeta, LibraryItem, Progress } from '../shared/book'
+import type { Bookmark, BookMeta, Highlight, LibraryItem, Progress } from '../shared/book'
 import { formatFromPath } from '../shared/book'
 import { parseTxt } from './parsers/txt'
 
@@ -112,6 +112,17 @@ export class LibraryStore {
     this.scheduleSave()
   }
 
+  async rename(id: string, title: string): Promise<LibraryItem> {
+    await this.load()
+    const item = this.items[id]
+    if (!item) throw new Error('书籍不存在')
+    const name = title.trim()
+    if (!name) throw new Error('书名不能为空')
+    item.meta.title = name
+    await this.flush()
+    return item
+  }
+
   async clear(): Promise<void> {
     this.items = {}
     this.scheduleSave()
@@ -140,6 +151,30 @@ export class LibraryStore {
     await this.load()
     for (const item of Object.values(this.items)) {
       item.bookmarks = item.bookmarks.filter((b) => b.id !== id)
+    }
+    this.scheduleSave()
+  }
+
+  async listHighlights(bookId: string): Promise<Highlight[]> {
+    await this.load()
+    return this.items[bookId]?.highlights ?? []
+  }
+
+  async addHighlight(input: Omit<Highlight, 'id' | 'createdAt'>): Promise<Highlight> {
+    await this.load()
+    const item = this.items[input.bookId]
+    if (!item) throw new Error('书籍不存在')
+    const highlight: Highlight = { ...input, id: randomUUID(), createdAt: Date.now() }
+    item.highlights = item.highlights ?? []
+    item.highlights.push(highlight)
+    this.scheduleSave()
+    return highlight
+  }
+
+  async removeHighlight(id: string): Promise<void> {
+    await this.load()
+    for (const item of Object.values(this.items)) {
+      if (item.highlights) item.highlights = item.highlights.filter((x) => x.id !== id)
     }
     this.scheduleSave()
   }

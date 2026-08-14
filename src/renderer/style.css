@@ -17,6 +17,7 @@ body { background: var(--bg); color: var(--fg); font-family: "Microsoft YaHei", 
 .reader-main { flex: 1; overflow: hidden; }
 .reader-page { height: 100%; overflow-x: auto; overflow-y: hidden; padding: 24px 48px; column-width: 34em; column-gap: 3em; scroll-behavior: smooth; }
 .reader-page[data-mode="scroll"] { column-width: auto; overflow-y: auto; }
+.reader-page[data-mode="vertical"] { column-width: auto; overflow-y: auto; }
 .reader-toc { width: 240px; border-right: 1px solid #ddd; overflow-y: auto; }
 .reader-toc.hidden { display: none; }
 .reader-toc ul { list-style: none; margin: 0; padding: 8px; }
@@ -105,6 +106,28 @@ body[data-theme="green"] { --bg: #e8f0e3; --fg: #2f3b2f; --accent: #4f7a4f; }
 .quiz-feedback { margin-top: 6px; color: #555; font-size: 13px; }
 .quiz-actions { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
 .quiz-actions button { padding: 6px 12px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; }
+
+.reader-page mark { padding: 0 2px; border-radius: 3px; cursor: pointer; }
+.reader-page mark.hl-yellow { background: rgba(255, 213, 79, .55); }
+.reader-page mark.hl-green { background: rgba(129, 199, 132, .5); }
+.reader-page mark.hl-pink { background: rgba(244, 143, 177, .5); }
+.reader-page mark.hl-blue { background: rgba(100, 181, 246, .5); }
+.vocab-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.vocab-tools button { padding: 5px 12px; border: 1px solid #3b5bdb; background: #eef2ff; color: #3b5bdb; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.dict-stats { color: #888; font-size: 12px; }
+.dict-tags { margin: 4px 0; }
+.dict-tag { display: inline-block; margin: 2px 4px 0 0; padding: 1px 8px; border-radius: 10px; background: #eef2ff; color: #3b5bdb; font-size: 11px; }
+.side-panel { width: 380px; max-width: 45vw; border-left: 1px solid rgba(0,0,0,.1); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.side-panel.hidden { display: none; }
+.side-tabs { display: flex; align-items: center; border-bottom: 1px solid rgba(0,0,0,.1); }
+.side-tabs button { flex: 1; padding: 9px 4px; border: none; background: transparent; color: var(--text); cursor: pointer; font-size: 13px; }
+.side-tabs button.active { color: #3b5bdb; border-bottom: 2px solid #3b5bdb; }
+.side-tabs button[data-act="side-close"] { flex: 0 0 auto; padding: 9px 12px; font-size: 16px; }
+.side-content { flex: 1; overflow-y: auto; padding: 12px; }
+.side-pane { height: 100%; }
+.side-pane.hidden { display: none; }
+.quiz-widget .quiz-controls { display: flex; gap: 10px; margin-bottom: 8px; }
+.quiz-widget .quiz-controls label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .reader-toolbar, .reader-footer { background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); }
 .reader-toolbar button, .reader-footer button, .lib-actions button, .source-actions button { border-radius: 8px; }
 .reader-toc li { transition: background .12s; }

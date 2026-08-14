@@ -1,4 +1,4 @@
-import type { AiProvider, Bookmark, Chapter, LibraryItem, Progress, Settings } from './book'
+import type { AiProvider, Bookmark, Chapter, Highlight, HighlightColor, LibraryItem, Progress, Settings } from './book'
 import type { BookSource, SourceChapter, SourceSearchResult } from './source'
 
 export interface UploadStatus {
@@ -25,6 +25,7 @@ export interface DictEntry {
   word: string
   translation: string
   phonetic?: string
+  tags?: string
 }
 
 export interface ExamplePair {
@@ -70,6 +71,7 @@ export interface ReaderApi {
     addFiles(paths: string[]): Promise<LibraryItem[]>
     addFolder(): Promise<LibraryItem[]>
     remove(id: string): Promise<void>
+    rename(id: string, title: string): Promise<LibraryItem>
     clear(): Promise<void>
     import(): Promise<void>
     export(): Promise<string | null>
@@ -80,6 +82,9 @@ export interface ReaderApi {
     listBookmarks(id: string): Promise<Bookmark[]>
     addBookmark(b: Omit<Bookmark, 'id' | 'createdAt'>): Promise<Bookmark>
     removeBookmark(id: string): Promise<void>
+    listHighlights(id: string): Promise<Highlight[]>
+    addHighlight(b: Omit<Highlight, 'id' | 'createdAt'>): Promise<Highlight>
+    removeHighlight(id: string): Promise<void>
   }
   settings: {
     get(): Promise<Settings>
@@ -96,11 +101,13 @@ export interface ReaderApi {
     test(provider: AiProvider): Promise<{ ok: boolean; message: string; models: string[] }>
     fetchModels(provider: AiProvider): Promise<string[]>
     chat(req: AiChatRequest): Promise<string>
-    quiz(req: { bookId: string; chapterTitle: string; chapterText: string }): Promise<Quiz>
+    quiz(req: { bookId: string; chapterTitle: string; chapterText: string; count?: number; difficulty?: string }): Promise<Quiz>
   }
   dictionary: {
     lookup(word: string): Promise<DictEntry | null>
     examples(word: string): Promise<ExamplePair[]>
+    import(): Promise<{ added: number; total: number }>
+    stats(): Promise<number>
   }
   vocab: {
     list(): Promise<VocabEntry[]>

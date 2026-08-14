@@ -7,6 +7,7 @@ const api: ReaderApi = {
     addFiles: (paths) => ipcRenderer.invoke('library:addFiles', paths),
     addFolder: () => ipcRenderer.invoke('library:addFolder'),
     remove: (id) => ipcRenderer.invoke('library:remove', id),
+    rename: (id, title) => ipcRenderer.invoke('library:rename', id, title),
     clear: () => ipcRenderer.invoke('library:clear'),
     import: () => ipcRenderer.invoke('library:import'),
     export: () => ipcRenderer.invoke('library:export')
@@ -16,7 +17,10 @@ const api: ReaderApi = {
     saveProgress: (p) => ipcRenderer.invoke('book:saveProgress', p),
     listBookmarks: (id) => ipcRenderer.invoke('book:listBookmarks', id),
     addBookmark: (b) => ipcRenderer.invoke('book:addBookmark', b),
-    removeBookmark: (id) => ipcRenderer.invoke('book:removeBookmark', id)
+    removeBookmark: (id) => ipcRenderer.invoke('book:removeBookmark', id),
+    listHighlights: (id) => ipcRenderer.invoke('book:listHighlights', id),
+    addHighlight: (b) => ipcRenderer.invoke('book:addHighlight', b),
+    removeHighlight: (id) => ipcRenderer.invoke('book:removeHighlight', id)
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
@@ -35,7 +39,9 @@ const api: ReaderApi = {
   },
   dictionary: {
     lookup: (word) => ipcRenderer.invoke('dictionary:lookup', word),
-    examples: (word) => ipcRenderer.invoke('dictionary:examples', word)
+    examples: (word) => ipcRenderer.invoke('dictionary:examples', word),
+    import: () => ipcRenderer.invoke('dictionary:import'),
+    stats: () => ipcRenderer.invoke('dictionary:stats')
   },
   vocab: {
     list: () => ipcRenderer.invoke('vocab:list'),

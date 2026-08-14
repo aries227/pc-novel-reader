@@ -26,6 +26,10 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
   grid.className = 'lib-grid'
   container.appendChild(grid)
 
+  async function refresh(): Promise<void> {
+    await renderLibrary(container, onOpen)
+  }
+
   const items = await window.reader.library.list()
   if (items.length === 0) {
     const empty = document.createElement('div')
@@ -33,7 +37,7 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
     empty.textContent = '书架为空：点击“打开文件”或扫码上传书籍'
     grid.appendChild(empty)
   }
-  for (const item of items) grid.appendChild(bookCard(item, onOpen))
+  for (const item of items) grid.appendChild(bookCard(item, onOpen, refresh))
 
   header.querySelector('[data-act="add-files"]')!.addEventListener('click', async () => {
     const paths = await window.reader.dialog.openFiles()
@@ -66,8 +70,8 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
   header.querySelector('[data-act="settings"]')!.addEventListener('click', () => container.dispatchEvent(new CustomEvent('open-settings')))
 }
 
-function bookCard(item: LibraryItem, onOpen: (id: string) => void): HTMLElement {
-  const card = document.createElement('button')
+function bookCard(item: LibraryItem, onOpen: (id: string) => void, onChanged: () => Promise<void>): HTMLElement {
+  const card = document.createElement('div')
   card.className = 'book-card'
   const cover = item.meta.cover
     ? `<img class="book-cover" src="${item.meta.cover}" alt="" />`
@@ -76,8 +80,22 @@ function bookCard(item: LibraryItem, onOpen: (id: string) => void): HTMLElement 
     ${cover}
     <div class="book-title">${escapeHtml(item.meta.title)}</div>
     <div class="book-author">${escapeHtml(item.meta.author || '未知作者')}</div>
-    <div class="book-progress">${item.progress ? `${Math.round((item.progress.chapterIndex / 1000) * 100)}%` : '未读'}</div>`
-  card.addEventListener('click', () => onOpen(item.meta.id))
+    <div class="book-progress">${item.progress ? `${Math.round((item.progress.chapterIndex / 1000) * 100)}%` : '未读'}</div>
+    <button class="book-rename" title="改名">改名</button>`
+  card.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.book-rename')) return
+    onOpen(item.meta.id)
+  })
+  card.querySelector('.book-rename')!.addEventListener('click', async () => {
+    const name = prompt('输入新的书名：', item.meta.title)
+    if (name === null) return
+    try {
+      await window.reader.library.rename(item.meta.id, name)
+      await onChanged()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '改名失败')
+    }
+  })
   return card
 }
 

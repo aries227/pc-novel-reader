@@ -19,6 +19,7 @@ export async function openVocabModal(container: HTMLElement): Promise<void> {
   overlay.innerHTML = `
     <div class="modal modal-wide vocab-modal">
       <h2>生词本</h2>
+      <div class="vocab-tools"><button data-act="import-dict">导入词典</button><span class="dict-stats"></span></div>
       <div class="vocab-list"></div>
       <button data-act="close">关闭</button>
     </div>`
@@ -26,6 +27,9 @@ export async function openVocabModal(container: HTMLElement): Promise<void> {
 
   async function render(): Promise<void> {
     const list = await window.reader.vocab.list()
+    const stats = await window.reader.dictionary.stats()
+    const statsEl = overlay.querySelector('.dict-stats') as HTMLElement
+    statsEl.textContent = stats > 0 ? `已导入 ${stats} 条` : ''
     const box = overlay.querySelector('.vocab-list') as HTMLElement
     box.innerHTML = ''
     if (list.length === 0) {
@@ -67,6 +71,19 @@ export async function openVocabModal(container: HTMLElement): Promise<void> {
   }
 
   overlay.querySelector('[data-act="close"]')!.addEventListener('click', () => overlay.remove())
+  overlay.querySelector('[data-act="import-dict"]')!.addEventListener('click', async () => {
+    const btn = overlay.querySelector('[data-act="import-dict"]') as HTMLButtonElement
+    btn.disabled = true
+    try {
+      const r = await window.reader.dictionary.import()
+      alert(r.added > 0 ? `导入成功：新增 ${r.added} 条，当前共 ${r.total} 条` : `没有新增条目，当前共 ${r.total} 条`)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '导入失败')
+    } finally {
+      btn.disabled = false
+      await render()
+    }
+  })
   await render()
 }
 
@@ -76,29 +93,48 @@ export interface QuizModalOptions {
   chapterText: string
 }
 
-export async function openQuizModal(container: HTMLElement, opts: QuizModalOptions): Promise<void> {
-  const overlay = document.createElement('div')
-  overlay.className = 'modal-overlay'
-  overlay.innerHTML = `
-    <div class="modal modal-wide quiz-modal">
-      <h2>本章练习</h2>
-      <div class="quiz-body">正在生成练习…（需在设置中配置练习用的 AI 供应商与 Key）</div>
-      <div class="quiz-actions">
-        <button data-act="submit">提交</button>
-        <button data-act="regenerate">重新生成</button>
-        <button data-act="close">关闭</button>
-      </div>
+export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions): Promise<void> {
+  const settings = await window.reader.settings.get()
+  let quizCount = settings.aiDefaults.quizCount ?? 4
+  let quizDifficulty = settings.aiDefaults.quizDifficulty ?? '通用'
+  host.innerHTML = `
+    <div class="quiz-controls">
+      <label>题量 <select data-quiz-count></select></label>
+      <label>难度 <select data-quiz-difficulty></select></label>
+    </div>
+    <div class="quiz-body">正在生成练习…（需在设置中配置练习用的 AI 供应商与 Key）</div>
+    <div class="quiz-actions">
+      <button data-act="submit">提交</button>
+      <button data-act="regenerate">重新生成</button>
     </div>`
-  container.appendChild(overlay)
+
+  const countSel = host.querySelector('[data-quiz-count]') as HTMLSelectElement
+  for (let i = 1; i <= 12; i++) {
+    const opt = document.createElement('option')
+    opt.value = String(i)
+    opt.textContent = `${i} 道`
+    opt.selected = i === quizCount
+    countSel.appendChild(opt)
+  }
+  const diffSel = host.querySelector('[data-quiz-difficulty]') as HTMLSelectElement
+  ;['通用', '初中', '高中', '四级', '六级', '考研', '雅思', '托福', 'GRE'].forEach((d) => {
+    const opt = document.createElement('option')
+    opt.value = d
+    opt.textContent = d
+    opt.selected = d === quizDifficulty
+    diffSel.appendChild(opt)
+  })
+  countSel.addEventListener('change', () => { quizCount = Number(countSel.value) })
+  diffSel.addEventListener('change', () => { quizDifficulty = diffSel.value })
 
   let quiz: Quiz | null = null
   const answers = new Map<string, string>()
 
   async function generate(): Promise<void> {
-    const body = overlay.querySelector('.quiz-body') as HTMLElement
+    const body = host.querySelector('.quiz-body') as HTMLElement
     body.textContent = '正在生成练习…（需在设置中配置练习用的 AI 供应商与 Key）'
     try {
-      quiz = await window.reader.ai.quiz(opts)
+      quiz = await window.reader.ai.quiz({ ...opts, count: quizCount, difficulty: quizDifficulty })
       answers.clear()
       renderQuiz()
     } catch (err) {
@@ -108,7 +144,7 @@ export async function openQuizModal(container: HTMLElement, opts: QuizModalOptio
 
   function renderQuiz(): void {
     if (!quiz) return
-    const body = overlay.querySelector('.quiz-body') as HTMLElement
+    const body = host.querySelector('.quiz-body') as HTMLElement
     body.innerHTML = `<h3>${esc(quiz.title)}</h3>` + quiz.questions.map((q) => {
       let control = ''
       if (q.options?.length) {
@@ -133,12 +169,12 @@ export async function openQuizModal(container: HTMLElement, opts: QuizModalOptio
     })
   }
 
-  overlay.querySelector('[data-act="submit"]')!.addEventListener('click', () => {
+  host.querySelector('[data-act="submit"]')!.addEventListener('click', () => {
     if (!quiz) return
     let score = 0
-    const body = overlay.querySelector('.quiz-body') as HTMLElement
+    const body = host.querySelector('.quiz-body') as HTMLElement
     quiz.questions.forEach((q) => {
-      const box = overlay.querySelector(`[data-quiz-q="${q.id}"]`) as HTMLElement
+      const box = host.querySelector(`[data-quiz-q="${q.id}"]`) as HTMLElement
       const fb = box.querySelector('.quiz-feedback') as HTMLElement
       const checked = box.querySelector<HTMLInputElement>('input[type="radio"]:checked')
       const text = box.querySelector<HTMLInputElement>('input[type="text"]')
@@ -151,11 +187,26 @@ export async function openQuizModal(container: HTMLElement, opts: QuizModalOptio
     const h3 = body.querySelector('h3')
     if (h3 && quiz) h3.textContent = `${quiz.title}（得分 ${score}/${quiz.questions.length}）`
   })
-  overlay.querySelector('[data-act="regenerate"]')!.addEventListener('click', () => {
+  host.querySelector('[data-act="regenerate"]')!.addEventListener('click', () => {
     void generate()
   })
-  overlay.querySelector('[data-act="close"]')!.addEventListener('click', () => overlay.remove())
   void generate()
+}
+
+export async function openQuizModal(container: HTMLElement, opts: QuizModalOptions): Promise<void> {
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal modal-wide quiz-modal">
+      <h2>本章练习</h2>
+      <div class="quiz-widget"></div>
+      <div class="quiz-actions">
+        <button data-act="close">关闭</button>
+      </div>
+    </div>`
+  container.appendChild(overlay)
+  overlay.querySelector('[data-act="close"]')!.addEventListener('click', () => overlay.remove())
+  await createQuizWidget(overlay.querySelector('.quiz-widget') as HTMLElement, opts)
 }
 
 function esc(v: string): string {

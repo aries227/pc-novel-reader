@@ -7,7 +7,7 @@ describe('ensureAiSettings', () => {
     const s = ensureAiSettings({
       ...DEFAULT_SETTINGS,
       aiProviders: [],
-      aiDefaults: { translateProviderId: '', translateModel: '', quizProviderId: '', quizModel: '' },
+      aiDefaults: { translateProviderId: '', translateModel: '', quizProviderId: '', quizModel: '', quizCount: 4, quizDifficulty: '通用' },
       translateApiKey: 'sk-old',
       translateBaseUrl: 'https://api.deepseek.com',
       translateModel: 'deepseek-chat'
@@ -22,7 +22,7 @@ describe('ensureAiSettings', () => {
     const s = ensureAiSettings({
       ...DEFAULT_SETTINGS,
       aiProviders: [{ id: 'a', name: 'A', baseUrl: 'https://a.example', apiKey: '', models: ['a1'] }],
-      aiDefaults: { translateProviderId: '', translateModel: '', quizProviderId: '', quizModel: '' }
+      aiDefaults: { translateProviderId: '', translateModel: '', quizProviderId: '', quizModel: '', quizCount: 4, quizDifficulty: '通用' }
     })
     expect(s.aiProviders).toHaveLength(1)
     expect(s.aiProviders[0].name).toBe('A')

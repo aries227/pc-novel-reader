@@ -1,9 +1,10 @@
-import type { Settings } from '../../shared/book'
+import type { Highlight, Settings } from '../../shared/book'
 import type { PdfControls } from '../reader/pdf-view'
-import { canNext, nextPage, prevPage } from '../reader/pager'
+import { applyHighlights } from '../reader/highlight'
+import { canNext, canNextVertical, canPrevVertical, nextPage, nextVerticalPage, prevPage, prevVerticalPage } from '../reader/pager'
 import { sanitizeHtml } from '../reader/sanitize'
 import { applySettingsToBody, resolveFontFamily } from '../theme'
-import { openQuizModal, openVocabModal } from './study'
+import { createQuizWidget, openVocabModal } from './study'
 
 export async function renderReader(container: HTMLElement, bookId: string, onBack: () => void): Promise<void> {
   const data = await window.reader.book.open(bookId)
@@ -11,6 +12,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const { meta, chapters } = data
   let chapterIndex = 0
   let settings = await window.reader.settings.get()
+  let highlights: Highlight[] = await window.reader.book.listHighlights(bookId)
   let pdf: PdfControls | null = null
 
   container.innerHTML = `
@@ -39,15 +41,28 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <label>主题 <select data-set="theme"><option value="light">白</option><option value="sepia">米黄</option><option value="dark">夜间</option></select></label>
         <label>字号 <input type="range" data-set="fontSize" min="12" max="32" step="1" /></label>
         <label>行距 <input type="range" data-set="lineHeight" min="1.2" max="2.6" step="0.1" /></label>
-        <label>模式 <select data-set="mode"><option value="paged">翻页</option><option value="scroll">滚动</option></select></label>
+        <label>模式 <select data-set="mode"><option value="paged">左右翻页</option><option value="vertical">上下翻页</option><option value="scroll">滚动</option></select></label>
       </div>
-      <div class="translate-panel hidden">
-        <div class="translate-head"><span class="translate-title">译文</span><button data-act="translate-close">×</button></div>
-        <div class="translate-content"></div>
-      </div>
+      <aside class="side-panel hidden">
+        <div class="side-tabs">
+          <button data-tab="translate">翻译</button>
+          <button data-tab="dict">词典</button>
+          <button data-tab="quiz">练习</button>
+          <button data-act="side-close" title="收起">×</button>
+        </div>
+        <div class="side-content">
+          <div class="side-pane" data-pane="translate"><div class="translate-content"></div></div>
+          <div class="side-pane hidden" data-pane="dict"><div class="dict-content"></div></div>
+          <div class="side-pane hidden" data-pane="quiz"><div class="quiz-widget"></div></div>
+        </div>
+      </aside>
       <div class="word-popup hidden">
         <button data-act="dict-lookup">查词</button>
         <button data-act="vocab-add">收藏</button>
+        <button data-act="hl-yellow" title="黄色高亮">黄</button>
+        <button data-act="hl-green" title="绿色高亮">绿</button>
+        <button data-act="hl-pink" title="粉色高亮">粉</button>
+        <button data-act="hl-remove" class="hidden">取消高亮</button>
       </div>
     </div>`
 
@@ -58,6 +73,16 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const pctEl = root.querySelector('.reader-pct') as HTMLElement
   const progressEl = root.querySelector('.reader-progress') as HTMLInputElement
   const popupEl = root.querySelector('.word-popup') as HTMLElement
+  const sidePanel = root.querySelector('.side-panel') as HTMLElement
+  const translateContent = sidePanel.querySelector('.translate-content') as HTMLElement
+  const dictContent = sidePanel.querySelector('.dict-content') as HTMLElement
+  const quizPane = sidePanel.querySelector('[data-pane="quiz"] .quiz-widget') as HTMLElement
+
+  function showSideTab(tab: 'translate' | 'dict' | 'quiz'): void {
+    sidePanel.classList.remove('hidden')
+    sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab))
+    sidePanel.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('hidden', (p as HTMLElement).dataset.pane !== tab))
+  }
 
   function applyTheme(s: Settings): void {
     applySettingsToBody(s)
@@ -70,7 +95,14 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     if (chapters.length === 0) return
     const chapter = chapters[chapterIndex]
     titleEl.textContent = `${meta.title} · ${chapter.title}`
-    pageEl.innerHTML = sanitizeHtml(chapter.html)
+    const chapterHighlights = highlights.filter((h) => h.chapterIndex === chapterIndex)
+    pageEl.innerHTML = applyHighlights(sanitizeHtml(chapter.html), chapterHighlights)
+    pageEl.querySelectorAll<HTMLElement>('mark[data-highlight]').forEach((mark) => {
+      mark.addEventListener('click', (e) => {
+        e.stopPropagation()
+        showHighlightMenu(mark)
+      })
+    })
     pageEl.dataset.mode = settings.mode
     pageEl.scrollLeft = 0
     pctEl.textContent = `${Math.round((chapterIndex / chapters.length) * 100)}%`
@@ -101,31 +133,34 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   })
   root.querySelector('[data-act="quiz"]')!.addEventListener('click', () => {
     const chapter = chapters[chapterIndex]
-    void openQuizModal(container, {
-      bookId,
-      chapterTitle: chapter?.title ?? meta.title,
-      chapterText: pageEl.innerText
-    })
+    showSideTab('quiz')
+    if (!quizPane.dataset.ready) {
+      quizPane.dataset.ready = '1'
+      void createQuizWidget(quizPane, {
+        bookId,
+        chapterTitle: chapter?.title ?? meta.title,
+        chapterText: pageEl.innerText
+      })
+    }
   })
   root.querySelector('[data-act="upload"]')!.addEventListener('click', () => container.dispatchEvent(new CustomEvent('open-upload')))
   root.querySelector('[data-act="settings"]')!.addEventListener('click', () => root.querySelector('.reader-settings')!.classList.toggle('hidden'))
   root.querySelector('[data-act="translate"]')!.addEventListener('click', async () => {
-    const panel = root.querySelector('.translate-panel') as HTMLElement
-    const contentEl = panel.querySelector('.translate-content') as HTMLElement
-    panel.classList.remove('hidden')
-    contentEl.textContent = '翻译中…'
+    showSideTab('translate')
+    translateContent.textContent = '翻译中…'
     const sel = window.getSelection()
     const anchor = sel?.anchorNode
     const selected = sel?.toString().trim() ?? ''
     const text = selected && anchor && pageEl.contains(anchor) ? selected : pageEl.innerText.slice(0, 8000)
     try {
-      contentEl.textContent = await window.reader.translate.translate(text)
+      translateContent.textContent = await window.reader.translate.translate(text)
     } catch (err) {
-      contentEl.textContent = err instanceof Error ? err.message : '翻译失败'
+      translateContent.textContent = err instanceof Error ? err.message : '翻译失败'
     }
   })
-  root.querySelector('[data-act="translate-close"]')!.addEventListener('click', () => {
-    root.querySelector('.translate-panel')!.classList.add('hidden')
+  root.querySelector('[data-act="side-close"]')!.addEventListener('click', () => sidePanel.classList.add('hidden'))
+  sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => showSideTab((btn as HTMLElement).dataset.tab as 'translate' | 'dict' | 'quiz'))
   })
 
   function hideWordPopup(): void {
@@ -136,11 +171,37 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     hideWordPopup()
     if (!sel || sel.isCollapsed || !pageEl.contains(sel.anchorNode)) return
     const text = sel.toString().trim()
-    if (!/^[A-Za-z][A-Za-z' -]{0,39}$/.test(text)) return
+    if (!text || text.length > 300) return
+    const isWord = /^[A-Za-z][A-Za-z' -]{0,39}$/.test(text)
+    const dictBtn = popupEl.querySelector('[data-act="dict-lookup"]') as HTMLElement
+    const vocabBtn = popupEl.querySelector('[data-act="vocab-add"]') as HTMLElement
+    const hlRemove = popupEl.querySelector('[data-act="hl-remove"]') as HTMLElement
+    const hlRow = popupEl.querySelectorAll('[data-act^="hl-"]:not([data-act="hl-remove"])')
+    dictBtn.classList.toggle('hidden', !isWord)
+    vocabBtn.classList.toggle('hidden', !isWord)
+    hlRemove.classList.add('hidden')
+    hlRow.forEach((b) => b.classList.remove('hidden'))
     const rect = sel.getRangeAt(0).getBoundingClientRect()
     popupEl.style.left = `${Math.max(0, Math.min(rect.left, window.innerWidth - 180))}px`
     popupEl.style.top = `${rect.bottom + 6}px`
     popupEl.dataset.word = text
+    delete popupEl.dataset.highlightId
+    popupEl.classList.remove('hidden')
+  }
+
+  function showHighlightMenu(mark: HTMLElement): void {
+    const dictBtn = popupEl.querySelector('[data-act="dict-lookup"]') as HTMLElement
+    const vocabBtn = popupEl.querySelector('[data-act="vocab-add"]') as HTMLElement
+    const hlRemove = popupEl.querySelector('[data-act="hl-remove"]') as HTMLElement
+    const hlRow = popupEl.querySelectorAll('[data-act^="hl-"]:not([data-act="hl-remove"])')
+    dictBtn.classList.add('hidden')
+    vocabBtn.classList.add('hidden')
+    hlRow.forEach((b) => b.classList.add('hidden'))
+    hlRemove.classList.remove('hidden')
+    popupEl.dataset.highlightId = mark.dataset.highlightId ?? ''
+    const rect = mark.getBoundingClientRect()
+    popupEl.style.left = `${Math.max(0, Math.min(rect.left, window.innerWidth - 180))}px`
+    popupEl.style.top = `${rect.bottom + 6}px`
     popupEl.classList.remove('hidden')
   }
 
@@ -166,27 +227,25 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   }
 
   async function showDictPanel(word: string): Promise<void> {
-    const panel = root.querySelector('.translate-panel') as HTMLElement
-    const title = panel.querySelector('.translate-title') as HTMLElement
-    const contentEl = panel.querySelector('.translate-content') as HTMLElement
-    title.textContent = '词典'
-    contentEl.innerHTML = '查询中…'
-    panel.classList.remove('hidden')
+    showSideTab('dict')
+    dictContent.innerHTML = '查询中…'
     const entry = await window.reader.dictionary.lookup(word)
     const examples = await window.reader.dictionary.examples(word)
     if (!entry) {
-      contentEl.innerHTML = `<p>未找到「${esc(word)}」的释义。</p>`
+      dictContent.innerHTML = `<p>未找到「${esc(word)}」的释义。</p>`
       return
     }
     const ex = examples.map((x) => `<li>${esc(x.en)}<br /><span class="dict-cn">${esc(x.cn)}</span></li>`).join('')
-    contentEl.innerHTML = `
+    const tags = entry.tags ? `<div class="dict-tags">${entry.tags.split(/\s+/).filter(Boolean).map((t) => `<span class="dict-tag">${esc(tagLabel(t))}</span>`).join('')}</div>` : ''
+    dictContent.innerHTML = `
       <div class="dict-head"><strong>${esc(entry.word)}</strong>${entry.phonetic ? `<span class="vocab-phonetic">${esc(entry.phonetic)}</span>` : ''}</div>
       <p class="dict-trans">${esc(entry.translation)}</p>
+      ${tags}
       ${ex ? `<ul class="dict-examples">${ex}</ul>` : ''}
       <button data-act="dict-add" class="dict-add">加入生词本</button>`
-    contentEl.querySelector('[data-act="dict-add"]')!.addEventListener('click', async () => {
+    dictContent.querySelector('[data-act="dict-add"]')!.addEventListener('click', async () => {
       await addVocab(entry.word, paragraphText(window.getSelection()))
-      const btn = contentEl.querySelector('[data-act="dict-add"]') as HTMLButtonElement
+      const btn = dictContent.querySelector('[data-act="dict-add"]') as HTMLButtonElement
       btn.textContent = '已加入 ✓'
       btn.disabled = true
     })
@@ -205,19 +264,33 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     const word = popupEl.dataset.word ?? ''
     const context = paragraphText(window.getSelection())
     hideWordPopup()
-    const panel = root.querySelector('.translate-panel') as HTMLElement
-    const title = panel.querySelector('.translate-title') as HTMLElement
-    const contentEl = panel.querySelector('.translate-content') as HTMLElement
     try {
       await addVocab(word, context)
-      title.textContent = '生词本'
-      contentEl.textContent = `已加入生词本 ✓`
-      panel.classList.remove('hidden')
+      showSideTab('dict')
+      dictContent.textContent = `已加入生词本 ✓`
     } catch (err) {
-      title.textContent = '生词本'
-      contentEl.textContent = err instanceof Error ? err.message : '收藏失败'
-      panel.classList.remove('hidden')
+      showSideTab('dict')
+      dictContent.textContent = err instanceof Error ? err.message : '收藏失败'
     }
+  })
+  popupEl.querySelectorAll('[data-act^="hl-"]:not([data-act="hl-remove"])').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const text = popupEl.dataset.word ?? ''
+      const color = (btn as HTMLElement).dataset.act?.replace('hl-', '') as 'yellow' | 'green' | 'pink'
+      hideWordPopup()
+      if (!text) return
+      await window.reader.book.addHighlight({ bookId, chapterIndex, text, color })
+      highlights = await window.reader.book.listHighlights(bookId)
+      renderChapter()
+    })
+  })
+  popupEl.querySelector('[data-act="hl-remove"]')!.addEventListener('click', async () => {
+    const id = popupEl.dataset.highlightId
+    hideWordPopup()
+    if (!id) return
+    await window.reader.book.removeHighlight(id)
+    highlights = await window.reader.book.listHighlights(bookId)
+    renderChapter()
   })
 
   const panel = root.querySelector('.reader-settings') as HTMLElement
@@ -253,7 +326,18 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         if (pageEl.scrollLeft > 0) prevPage(pageEl)
         else if (chapterIndex > 0) { chapterIndex--; renderChapter() }
       }
-    } else if (e.key === 'ArrowRight') {
+    } else if (settings.mode === 'vertical') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault()
+        if (canNextVertical(pageEl)) nextVerticalPage(pageEl)
+        else if (chapterIndex < chapters.length - 1) { chapterIndex++; renderChapter() }
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault()
+        if (canPrevVertical(pageEl)) prevVerticalPage(pageEl)
+        else if (chapterIndex > 0) { chapterIndex--; renderChapter() }
+      }
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault()
       pageEl.scrollBy({ top: pageEl.clientHeight * 0.8 })
     }
   }
@@ -287,4 +371,22 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
 
 function esc(v: string): string {
   return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function tagLabel(tag: string): string {
+  const map: Record<string, string> = {
+    zk: '中考',
+    gk: '高考',
+    cet4: '四级',
+    cet6: '六级',
+    ky: '考研',
+    toefl: '托福',
+    ielts: '雅思',
+    gre: 'GRE',
+    sat: 'SAT',
+    gmat: 'GMAT',
+    bec: 'BEC',
+    k12: 'K12'
+  }
+  return map[tag] ?? tag
 }

@@ -4,7 +4,7 @@ import { generateQuiz } from '../src/main/quiz'
 
 let server: ReturnType<typeof createServer>
 let base = ''
-let lastBody: { response_format?: unknown } = {}
+let lastBody: { response_format?: unknown; messages?: { content?: string }[] } = {}
 
 const VALID_JSON = JSON.stringify({
   title: '第一章 阅读理解',
@@ -89,5 +89,31 @@ describe('generateQuiz', () => {
     await expect(
       generateQuiz({ apiKey: 'test-key', baseUrl: base + '/nooptions', model: 'm', chapterTitle: 't', chapterText: 'c' })
     ).rejects.toThrow('题目格式不正确')
+  })
+  it('把题量与难度写入提示词', async () => {
+    await generateQuiz({
+      apiKey: 'test-key',
+      baseUrl: base,
+      model: 'deepseek-chat',
+      chapterTitle: '第一章',
+      chapterText: '内容',
+      count: 6,
+      difficulty: '雅思'
+    })
+    const sys = lastBody.messages?.[0]?.content as string
+    expect(sys).toContain('6 道')
+    expect(sys).toContain('雅思')
+  })
+  it('自定义提示词生效', async () => {
+    await generateQuiz({
+      apiKey: 'test-key',
+      baseUrl: base,
+      model: 'deepseek-chat',
+      chapterTitle: '第一章',
+      chapterText: '内容',
+      customPrompt: '只出翻译题，不要选择题'
+    })
+    const sys = lastBody.messages?.[0]?.content as string
+    expect(sys).toContain('只出翻译题')
   })
 })

@@ -68,6 +68,11 @@ export interface AiDefaults {
   customQuizPrompt?: string
 }
 
+export interface ExamColorSettings {
+  enabled: boolean
+  colors: Record<string, string>
+}
+
 export interface Settings {
   theme: 'light' | 'sepia' | 'dark' | 'green' | 'sunset' | 'ocean' | 'forest' | 'paper'
   fontSize: number
@@ -87,6 +92,7 @@ export interface Settings {
   translateTarget: string
   aiProviders: AiProvider[]
   aiDefaults: AiDefaults
+  examColors: ExamColorSettings
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -112,6 +118,19 @@ export const DEFAULT_SETTINGS: Settings = {
     quizModel: 'deepseek-chat',
     quizCount: 4,
     quizDifficulty: '通用'
+  },
+  examColors: {
+    enabled: true,
+    colors: {
+      zk: '#2e7d32',
+      gk: '#1565c0',
+      cet4: '#6a1b9a',
+      cet6: '#f9a825',
+      ky: '#ef6c00',
+      ielts: '#00838f',
+      toefl: '#c2185b',
+      gre: '#b71c1c'
+    }
   }
 }
 

@@ -33,6 +33,10 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
         <label>自定义提示词 <textarea data-ai-default="quizPrompt" rows="3" placeholder="可选：覆盖默认出题指令"></textarea></label>
         <label>翻译目标 <select data-set="translateTarget"><option>中文</option><option>英文</option><option>日文</option><option>韩文</option></select></label>
       </div>
+      <hr />
+      <h3>阅读着色</h3>
+      <label class="switch-row"><input type="checkbox" data-exam="enabled" /> 考试词自动着色（四六级/考研/托福/雅思/GRE 等）</label>
+      <div class="exam-colors" data-exam-colors></div>
       <label>上传端口 <select data-set="uploadPortMode"><option value="random">随机</option><option value="fixed">固定</option></select></label>
       <label>上传上限(MB) <input type="number" data-set="maxUploadMb" min="1" max="1024" /></label>
       <div class="update-row">
@@ -124,6 +128,45 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
     ;(overlay.querySelector('[data-ai-default="quizPrompt"]') as HTMLTextAreaElement).value = next.aiDefaults.customQuizPrompt ?? ''
     wireProviderCards()
   }
+
+  const EXAM_LEVELS: { tag: string; label: string }[] = [
+    { tag: 'zk', label: '中考' },
+    { tag: 'gk', label: '高考' },
+    { tag: 'cet4', label: '四级' },
+    { tag: 'cet6', label: '六级' },
+    { tag: 'ky', label: '考研' },
+    { tag: 'ielts', label: '雅思' },
+    { tag: 'toefl', label: '托福' },
+    { tag: 'gre', label: 'GRE' }
+  ]
+
+  function renderExamColors(next: Settings): void {
+    const box = overlay.querySelector('[data-exam-colors]') as HTMLElement
+    ;(overlay.querySelector('[data-exam="enabled"]') as HTMLInputElement).checked = next.examColors.enabled
+    box.innerHTML = ''
+    EXAM_LEVELS.forEach(({ tag, label }) => {
+      const item = document.createElement('label')
+      item.className = 'exam-color-item'
+      item.innerHTML = `<span>${label}</span><input type="color" data-exam-color="${tag}" value="${next.examColors.colors[tag] ?? '#888888'}" />`
+      box.appendChild(item)
+    })
+    box.querySelectorAll('[data-exam-color]').forEach((el) => {
+      el.addEventListener('change', async () => {
+        const cur = await window.reader.settings.get()
+        const tag = (el as HTMLElement).dataset.examColor!
+        const next2 = await window.reader.settings.set({
+          examColors: { ...cur.examColors, colors: { ...cur.examColors.colors, [tag]: (el as HTMLInputElement).value } }
+        })
+        renderExamColors(next2)
+      })
+    })
+  }
+
+  overlay.querySelector('[data-exam="enabled"]')!.addEventListener('change', async (e) => {
+    const cur = await window.reader.settings.get()
+    const next = await window.reader.settings.set({ examColors: { ...cur.examColors, enabled: (e.target as HTMLInputElement).checked } })
+    renderExamColors(next)
+  })
 
   function wireProviderCards(): void {
     overlay.querySelectorAll<HTMLElement>('.ai-provider').forEach((card) => {
@@ -276,6 +319,7 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
   })
 
   renderAi(s)
+  renderExamColors(s)
 }
 
 function escapeHtml(v: string): string {

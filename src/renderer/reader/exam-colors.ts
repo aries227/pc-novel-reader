@@ -9,7 +9,7 @@ export const EXAM_TAG_LABELS: Record<string, string> = {
   gre: 'GRE'
 }
 
-export function applyExamColors(html: string, tags: Record<string, string>): string {
+export function applyExamColors(html: string, tags: Record<string, string>, colors?: Record<string, string>): string {
   const entries = Object.keys(tags)
   if (!entries.length) return html
   const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -30,6 +30,8 @@ export function applyExamColors(html: string, tags: Record<string, string>): str
       if (m.index > last) parts.push(value.slice(last, m.index))
       const span = document.createElement('span')
       span.className = `lvl-${tag}`
+      const custom = colors?.[tag]
+      if (custom) span.style.background = `color-mix(in srgb, ${custom} 45%, transparent)`
       span.title = EXAM_TAG_LABELS[tag] ?? tag
       span.textContent = m[0]
       parts.push(span)

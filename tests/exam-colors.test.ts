@@ -22,4 +22,8 @@ describe('applyExamColors', () => {
     const html = '<p>college</p>'
     expect(applyExamColors(html, {})).toBe(html)
   })
+  it('支持自定义颜色', () => {
+    const out = applyExamColors('<p>college</p>', TAGS, { cet6: '#ff0000' })
+    expect(out).toContain('color-mix')
+  })
 })

@@ -75,7 +75,7 @@ function bookCard(item: LibraryItem, onOpen: (id: string) => void, onChanged: ()
   card.className = 'book-card'
   const cover = item.meta.cover
     ? `<img class="book-cover" src="${item.meta.cover}" alt="" />`
-    : `<div class="book-cover book-cover-text">${escapeHtml(item.meta.title.slice(0, 4))}</div>`
+    : `<div class="book-cover book-cover-text" style="background:${coverGradient(item.meta.title)}">${escapeHtml(item.meta.title.slice(0, 4))}</div>`
   card.innerHTML = `
     ${cover}
     <div class="book-title">${escapeHtml(item.meta.title)}</div>
@@ -101,4 +101,10 @@ function bookCard(item: LibraryItem, onOpen: (id: string) => void, onChanged: ()
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function coverGradient(title: string): string {
+  let h = 0
+  for (const ch of title) h = (h * 31 + (ch.codePointAt(0) ?? 0)) % 360
+  return `linear-gradient(135deg, hsl(${h}, 55%, 42%), hsl(${(h + 45) % 360}, 60%, 26%))`
 }

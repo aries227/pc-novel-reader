@@ -116,6 +116,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     if (!dragging) return
     const width = Math.min(640, Math.max(280, dragStartWidth + (dragStartX - e.clientX)))
     sidePanel.style.width = `${width}px`
+    applyPagedLayout()
   })
   window.addEventListener('mouseup', () => {
     if (!dragging) return
@@ -128,6 +129,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     sidePanel.classList.remove('hidden')
     sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab))
     sidePanel.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('hidden', (p as HTMLElement).dataset.pane !== tab))
+    requestAnimationFrame(() => applyPagedLayout())
   }
 
   function applyTheme(s: Settings): void {
@@ -142,7 +144,12 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     const chapter = chapters[chapterIndex]
     titleEl.textContent = `${meta.title} · ${chapter.title}`
     const chapterHighlights = highlights.filter((h) => h.chapterIndex === chapterIndex)
-    pageEl.innerHTML = applyExamColors(applyHighlights(sanitizeHtml(chapter.html), chapterHighlights), examTags)
+    const sanitized = sanitizeHtml(chapter.html)
+    const withHighlights = applyHighlights(sanitized, chapterHighlights)
+    pageEl.innerHTML =
+      settings.examColors?.enabled === false
+        ? withHighlights
+        : applyExamColors(withHighlights, examTags, settings.examColors?.colors)
     pageEl.querySelectorAll<HTMLElement>('mark[data-highlight]').forEach((mark) => {
       mark.addEventListener('click', (e) => {
         e.stopPropagation()
@@ -206,7 +213,10 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
       translateContent.textContent = err instanceof Error ? err.message : '翻译失败'
     }
   })
-  root.querySelector('[data-act="side-close"]')!.addEventListener('click', () => sidePanel.classList.add('hidden'))
+  root.querySelector('[data-act="side-close"]')!.addEventListener('click', () => {
+    sidePanel.classList.add('hidden')
+    applyPagedLayout()
+  })
   sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => showSideTab((btn as HTMLElement).dataset.tab as 'translate' | 'dict' | 'quiz'))
   })

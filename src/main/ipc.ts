@@ -276,6 +276,7 @@ export function registerIpc(
     return { meta: item.meta, chapters: [] }
   })
   ipcMain.handle('book:saveProgress', (_e, p: Progress) => library.saveProgress(p))
+  ipcMain.handle('book:getProgress', async (_e, id: string) => (await library.get(id))?.progress ?? null)
   ipcMain.handle('book:listBookmarks', async (_e, id: string) => (await library.get(id))?.bookmarks ?? [])
   ipcMain.handle('book:addBookmark', (_e, b) => library.addBookmark(b))
   ipcMain.handle('book:removeBookmark', (_e, id: string) => library.removeBookmark(id))

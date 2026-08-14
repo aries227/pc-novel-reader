@@ -42,6 +42,7 @@ function mockReader(): void {
         ]
       }),
       saveProgress: vi.fn(async () => undefined),
+      getProgress: async () => null,
       listBookmarks: async () => [],
       addBookmark: async (b) => ({ ...b, id: 'bm1', createdAt: 1 }),
       removeBookmark: async () => undefined,
@@ -129,15 +130,25 @@ describe('renderReader', () => {
   })
   it('右侧面板可通过拖拽调整宽度', async () => {
     mockReader()
-    localStorage.removeItem('jian-yue-side-width')
     const container = document.createElement('div')
     await renderReader(container, 'b1', () => undefined)
-    const resizer = container.querySelector('.side-resizer') as HTMLElement
+    const resizer = container.querySelector('.tl-panel .panel-resizer') as HTMLElement
     expect(resizer).not.toBeNull()
     resizer.dispatchEvent(new MouseEvent('mousedown', { clientX: 500, bubbles: true }))
     window.dispatchEvent(new MouseEvent('mousemove', { clientX: 300 }))
     window.dispatchEvent(new MouseEvent('mouseup'))
-    const panel = container.querySelector('.side-panel') as HTMLElement
-    expect(panel.style.width).toBe('580px')
+    const panel = container.querySelector('.tl-panel') as HTMLElement
+    expect(panel.style.width).toBe('600px')
+  })
+  it('打开书籍时恢复上次阅读的章节', async () => {
+    mockReader()
+    ;(window.reader.book as { getProgress: typeof window.reader.book.getProgress }).getProgress = async () => ({
+      bookId: 'b1',
+      chapterIndex: 1,
+      updatedAt: Date.now()
+    })
+    const container = document.createElement('div')
+    await renderReader(container, 'b1', () => undefined)
+    expect(container.querySelector('.reader-title')?.textContent).toContain('第二章')
   })
 })

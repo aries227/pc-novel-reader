@@ -11,7 +11,8 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const data = await window.reader.book.open(bookId)
   if (!data) return
   const { meta, chapters } = data
-  let chapterIndex = 0
+  const saved = await window.reader.book.getProgress(bookId)
+  let chapterIndex = saved?.chapterIndex != null && saved.chapterIndex < chapters.length ? saved.chapterIndex : 0
   let settings = await window.reader.settings.get()
   let highlights: Highlight[] = await window.reader.book.listHighlights(bookId)
   const examTags = await window.reader.dictionary.examTags()
@@ -70,22 +71,20 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <label>行距 <input type="range" data-set="lineHeight" min="1.2" max="2.6" step="0.1" /></label>
         <label>模式 <select data-set="mode"><option value="paged">左右翻页</option><option value="vertical">上下翻页</option><option value="hscroll">横向滑动</option><option value="scroll">滚动</option></select></label>
       </div>
-      <div class="side-resizer" title="拖动调整宽度"></div>
-      <aside class="side-panel hidden">
-        <div class="side-head">
-          <span class="side-title">学习面板</span>
-          <button data-act="side-close" title="收起">×</button>
-        </div>
-        <div class="side-tabs">
-          <button data-tab="translate">翻译</button>
-          <button data-tab="dict">词典</button>
-          <button data-tab="quiz">练习</button>
-        </div>
-        <div class="side-content">
-          <div class="side-pane" data-pane="translate"><div class="translate-content"></div></div>
-          <div class="side-pane hidden" data-pane="dict"><div class="dict-content"></div></div>
-          <div class="side-pane hidden" data-pane="quiz"><div class="quiz-widget"></div></div>
-        </div>
+      <aside class="float-panel tl-panel hidden">
+        <div class="panel-resizer" title="拖动调整宽度"></div>
+        <div class="float-head"><span class="float-title">翻译</span><button data-act="tl-close" title="关闭">×</button></div>
+        <div class="float-body"><div class="translate-content"></div></div>
+      </aside>
+      <aside class="float-panel dict-panel hidden">
+        <div class="panel-resizer" title="拖动调整宽度"></div>
+        <div class="float-head"><span class="float-title">词典</span><button data-act="dict-close" title="关闭">×</button></div>
+        <div class="float-body"><div class="dict-content"></div></div>
+      </aside>
+      <aside class="float-panel quiz-panel hidden">
+        <div class="panel-resizer" title="拖动调整宽度"></div>
+        <div class="float-head"><span class="float-title">本章练习</span><button data-act="quiz-close" title="关闭">×</button></div>
+        <div class="float-body"><div class="quiz-widget"></div></div>
       </aside>
       <div class="word-popup hidden">
         <button data-act="dict-lookup">查词</button>
@@ -104,15 +103,52 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const pctEl = root.querySelector('.reader-pct') as HTMLElement
   const progressEl = root.querySelector('.reader-progress') as HTMLInputElement
   const popupEl = root.querySelector('.word-popup') as HTMLElement
-  const sidePanel = root.querySelector('.side-panel') as HTMLElement
-  const translateContent = sidePanel.querySelector('.translate-content') as HTMLElement
-  const dictContent = sidePanel.querySelector('.dict-content') as HTMLElement
-  const quizPane = sidePanel.querySelector('[data-pane="quiz"] .quiz-widget') as HTMLElement
-  const resizerEl = root.querySelector('.side-resizer') as HTMLElement
-  const sideTitle = sidePanel.querySelector('.side-title') as HTMLElement
+  const tlPanel = root.querySelector('.tl-panel') as HTMLElement
+  const dictPanel = root.querySelector('.dict-panel') as HTMLElement
+  const quizPanel = root.querySelector('.quiz-panel') as HTMLElement
+  const translateContent = tlPanel.querySelector('.translate-content') as HTMLElement
+  const dictContent = dictPanel.querySelector('.dict-content') as HTMLElement
+  const quizPane = quizPanel.querySelector('.quiz-widget') as HTMLElement
 
-  const savedWidth = Number(localStorage.getItem('jian-yue-side-width'))
-  sidePanel.style.width = savedWidth >= 280 && savedWidth <= 640 ? `${savedWidth}px` : '380px'
+  function attachResize(panel: HTMLElement, key: string): void {
+    const resizer = panel.querySelector('.panel-resizer') as HTMLElement
+    const saved = Number(localStorage.getItem(key))
+    panel.style.width = saved >= 280 && saved <= 640 ? `${saved}px` : '400px'
+    let dragging = false
+    let startX = 0
+    let startWidth = 400
+    resizer.addEventListener('mousedown', (e) => {
+      dragging = true
+      startX = e.clientX
+      startWidth = parseFloat(panel.style.width) || 400
+      document.body.style.userSelect = 'none'
+      e.preventDefault()
+    })
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return
+      const width = Math.min(640, Math.max(280, startWidth + (startX - e.clientX)))
+      panel.style.width = `${width}px`
+    })
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return
+      dragging = false
+      document.body.style.userSelect = ''
+      localStorage.setItem(key, String(parseFloat(panel.style.width) || 400))
+    })
+  }
+  attachResize(tlPanel, 'jian-yue-tl-width')
+  attachResize(dictPanel, 'jian-yue-dict-width')
+  attachResize(quizPanel, 'jian-yue-quiz-width')
+
+  function openTranslate(): void {
+    tlPanel.classList.remove('hidden')
+  }
+  function openDict(): void {
+    dictPanel.classList.remove('hidden')
+  }
+  function openQuiz(): void {
+    quizPanel.classList.remove('hidden')
+  }
 
   function applyPagedLayout(): void {
     if (pdf || (settings.mode !== 'paged' && settings.mode !== 'hscroll')) {
@@ -133,37 +169,6 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     const g = parseFloat(pageEl.style.columnGap || '0')
     const step = w > 0 ? w + g : pageEl.clientWidth
     pageEl.scrollLeft = page * step
-  }
-
-  let dragging = false
-  let dragStartX = 0
-  let dragStartWidth = 380
-  resizerEl.addEventListener('mousedown', (e) => {
-    dragging = true
-    dragStartX = e.clientX
-    dragStartWidth = parseFloat(sidePanel.style.width) || 380
-    document.body.style.userSelect = 'none'
-    e.preventDefault()
-  })
-  window.addEventListener('mousemove', (e) => {
-    if (!dragging) return
-    const width = Math.min(640, Math.max(280, dragStartWidth + (dragStartX - e.clientX)))
-    sidePanel.style.width = `${width}px`
-    reflowPaged()
-  })
-  window.addEventListener('mouseup', () => {
-    if (!dragging) return
-    dragging = false
-    document.body.style.userSelect = ''
-    localStorage.setItem('jian-yue-side-width', String(parseFloat(sidePanel.style.width) || 380))
-  })
-
-  function showSideTab(tab: 'translate' | 'dict' | 'quiz'): void {
-    sidePanel.classList.remove('hidden')
-    sideTitle.textContent = tab === 'translate' ? '翻译' : tab === 'dict' ? '词典' : '本章练习'
-    sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab))
-    sidePanel.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('hidden', (p as HTMLElement).dataset.pane !== tab))
-    requestAnimationFrame(() => reflowPaged())
   }
 
   function applyTheme(s: Settings): void {
@@ -222,7 +227,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   })
   root.querySelector('[data-act="quiz"]')!.addEventListener('click', () => {
     const chapter = chapters[chapterIndex]
-    showSideTab('quiz')
+    openQuiz()
     if (!quizPane.dataset.ready) {
       quizPane.dataset.ready = '1'
       void createQuizWidget(quizPane, {
@@ -236,7 +241,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   root.querySelector('[data-act="upload"]')!.addEventListener('click', () => container.dispatchEvent(new CustomEvent('open-upload')))
   root.querySelector('[data-act="settings"]')!.addEventListener('click', () => root.querySelector('.reader-settings')!.classList.toggle('hidden'))
   root.querySelector('[data-act="translate"]')!.addEventListener('click', async () => {
-    showSideTab('translate')
+    openTranslate()
     translateContent.innerHTML = '<p class="tl-hint">翻译中…</p>'
     const sel = window.getSelection()
     const anchor = sel?.anchorNode
@@ -251,13 +256,9 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
       translateContent.innerHTML = `<p class="tl-error">${esc(err instanceof Error ? err.message : '翻译失败')}</p>`
     }
   })
-  root.querySelector('[data-act="side-close"]')!.addEventListener('click', () => {
-    sidePanel.classList.add('hidden')
-    reflowPaged()
-  })
-  sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => showSideTab((btn as HTMLElement).dataset.tab as 'translate' | 'dict' | 'quiz'))
-  })
+  root.querySelector('[data-act="tl-close"]')!.addEventListener('click', () => tlPanel.classList.add('hidden'))
+  root.querySelector('[data-act="dict-close"]')!.addEventListener('click', () => dictPanel.classList.add('hidden'))
+  root.querySelector('[data-act="quiz-close"]')!.addEventListener('click', () => quizPanel.classList.add('hidden'))
 
   function hideWordPopup(): void {
     popupEl.classList.add('hidden')
@@ -349,7 +350,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   }
 
   async function showDictPanel(word: string): Promise<void> {
-    showSideTab('dict')
+    openDict()
     await renderDictContent(dictContent, word)
   }
 
@@ -368,10 +369,10 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     hideWordPopup()
     try {
       await addVocab(word, context)
-      showSideTab('dict')
+      openDict()
       dictContent.textContent = `已加入生词本 ✓`
     } catch (err) {
-      showSideTab('dict')
+      openDict()
       dictContent.textContent = err instanceof Error ? err.message : '收藏失败'
     }
   })
@@ -482,7 +483,10 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
       progressEl.max = String(total)
       progressEl.value = String(Math.round((page / total) * 100))
       void window.reader.book.saveProgress({ bookId, chapterIndex: 0, page, updatedAt: Date.now() })
-    }).then((controls) => { pdf = controls })
+    }).then((controls) => {
+      pdf = controls
+      if (saved?.page && saved.page > 1) controls.goTo(saved.page)
+    })
   } else {
     renderChapter()
   }

@@ -15,6 +15,7 @@ const api: ReaderApi = {
   book: {
     open: (id) => ipcRenderer.invoke('book:open', id),
     saveProgress: (p) => ipcRenderer.invoke('book:saveProgress', p),
+    getProgress: (id) => ipcRenderer.invoke('book:getProgress', id),
     listBookmarks: (id) => ipcRenderer.invoke('book:listBookmarks', id),
     addBookmark: (b) => ipcRenderer.invoke('book:addBookmark', b),
     removeBookmark: (id) => ipcRenderer.invoke('book:removeBookmark', id),

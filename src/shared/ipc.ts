@@ -79,6 +79,7 @@ export interface ReaderApi {
   book: {
     open(id: string): Promise<BookOpenResult | null>
     saveProgress(p: Progress): Promise<void>
+    getProgress(id: string): Promise<Progress | null>
     listBookmarks(id: string): Promise<Bookmark[]>
     addBookmark(b: Omit<Bookmark, 'id' | 'createdAt'>): Promise<Bookmark>
     removeBookmark(id: string): Promise<void>

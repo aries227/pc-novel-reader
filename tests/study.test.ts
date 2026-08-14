@@ -18,6 +18,7 @@ function baseMock(): ReaderApi {
     book: {
       open: async () => null,
       saveProgress: async () => undefined,
+      getProgress: async () => null,
       listBookmarks: async () => [],
       addBookmark: async (b) => ({ ...b, id: 'x', createdAt: 1 }),
       removeBookmark: async () => undefined,

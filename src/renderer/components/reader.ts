@@ -72,11 +72,14 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
       </div>
       <div class="side-resizer" title="拖动调整宽度"></div>
       <aside class="side-panel hidden">
+        <div class="side-head">
+          <span class="side-title">学习面板</span>
+          <button data-act="side-close" title="收起">×</button>
+        </div>
         <div class="side-tabs">
           <button data-tab="translate">翻译</button>
           <button data-tab="dict">词典</button>
           <button data-tab="quiz">练习</button>
-          <button data-act="side-close" title="收起">×</button>
         </div>
         <div class="side-content">
           <div class="side-pane" data-pane="translate"><div class="translate-content"></div></div>
@@ -92,10 +95,6 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <button data-act="hl-pink" title="粉色高亮">粉</button>
         <button data-act="hl-remove" class="hidden">取消高亮</button>
       </div>
-      <div class="dict-popup hidden">
-        <div class="dict-popup-head"><span>词典</span><button data-act="dict-popup-close">×</button></div>
-        <div class="dict-popup-content"></div>
-      </div>
     </div>`
 
   const root = container.querySelector('.reader-root') as HTMLElement
@@ -110,8 +109,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const dictContent = sidePanel.querySelector('.dict-content') as HTMLElement
   const quizPane = sidePanel.querySelector('[data-pane="quiz"] .quiz-widget') as HTMLElement
   const resizerEl = root.querySelector('.side-resizer') as HTMLElement
-  const dictPopup = root.querySelector('.dict-popup') as HTMLElement
-  const dictPopupContent = dictPopup.querySelector('.dict-popup-content') as HTMLElement
+  const sideTitle = sidePanel.querySelector('.side-title') as HTMLElement
 
   const savedWidth = Number(localStorage.getItem('jian-yue-side-width'))
   sidePanel.style.width = savedWidth >= 280 && savedWidth <= 640 ? `${savedWidth}px` : '380px'
@@ -162,6 +160,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
 
   function showSideTab(tab: 'translate' | 'dict' | 'quiz'): void {
     sidePanel.classList.remove('hidden')
+    sideTitle.textContent = tab === 'translate' ? '翻译' : tab === 'dict' ? '词典' : '本章练习'
     sidePanel.querySelectorAll('.side-tabs button[data-tab]').forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.tab === tab))
     sidePanel.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('hidden', (p as HTMLElement).dataset.pane !== tab))
     requestAnimationFrame(() => reflowPaged())
@@ -238,15 +237,18 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   root.querySelector('[data-act="settings"]')!.addEventListener('click', () => root.querySelector('.reader-settings')!.classList.toggle('hidden'))
   root.querySelector('[data-act="translate"]')!.addEventListener('click', async () => {
     showSideTab('translate')
-    translateContent.textContent = '翻译中…'
+    translateContent.innerHTML = '<p class="tl-hint">翻译中…</p>'
     const sel = window.getSelection()
     const anchor = sel?.anchorNode
     const selected = sel?.toString().trim() ?? ''
     const text = selected && anchor && pageEl.contains(anchor) ? selected : pageEl.innerText.slice(0, 8000)
     try {
-      translateContent.textContent = await window.reader.translate.translate(text)
+      const translated = await window.reader.translate.translate(text)
+      translateContent.innerHTML = `
+        <div class="tl-block tl-orig"><div class="tl-label">原文</div><div class="tl-text">${esc(text)}</div></div>
+        <div class="tl-block tl-result"><div class="tl-label">译文</div><div class="tl-text">${esc(translated)}</div></div>`
     } catch (err) {
-      translateContent.textContent = err instanceof Error ? err.message : '翻译失败'
+      translateContent.innerHTML = `<p class="tl-error">${esc(err instanceof Error ? err.message : '翻译失败')}</p>`
     }
   })
   root.querySelector('[data-act="side-close"]')!.addEventListener('click', () => {
@@ -346,28 +348,20 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     })
   }
 
-  async function showDictPanel(word: string, anchor?: { left: number; top: number }): Promise<void> {
+  async function showDictPanel(word: string): Promise<void> {
     showSideTab('dict')
     await renderDictContent(dictContent, word)
-    if (anchor) {
-      await renderDictContent(dictPopupContent, word)
-      dictPopup.style.left = `${Math.max(8, Math.min(anchor.left, window.innerWidth - 380))}px`
-      dictPopup.style.top = `${anchor.top + 8}px`
-      dictPopup.classList.remove('hidden')
-    }
   }
 
   pageEl.addEventListener('mouseup', () => showWordPopup(window.getSelection()))
   document.addEventListener('mousedown', (e) => {
     if (!popupEl.contains(e.target as Node)) hideWordPopup()
-    if (!dictPopup.contains(e.target as Node)) dictPopup.classList.add('hidden')
   })
   popupEl.querySelector('[data-act="dict-lookup"]')!.addEventListener('click', () => {
     const word = popupEl.dataset.word ?? ''
     hideWordPopup()
-    void showDictPanel(word, { left: Number(popupEl.dataset.rectLeft ?? 0), top: Number(popupEl.dataset.rectTop ?? 0) })
+    void showDictPanel(word)
   })
-  dictPopup.querySelector('[data-act="dict-popup-close"]')!.addEventListener('click', () => dictPopup.classList.add('hidden'))
   popupEl.querySelector('[data-act="vocab-add"]')!.addEventListener('click', async () => {
     const word = popupEl.dataset.word ?? ''
     const context = paragraphText(window.getSelection())

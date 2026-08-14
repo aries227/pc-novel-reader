@@ -126,11 +126,6 @@ body[data-theme="paper"] { --bg: linear-gradient(160deg, #f7f1e3 0%, #efe3c8 100
 .reader-page .lvl-ielts { background: rgba(0, 131, 143, .3); }
 .reader-page .lvl-toefl { background: rgba(194, 24, 91, .28); }
 .reader-page .lvl-gre { background: rgba(183, 28, 28, .3); }
-.dict-popup { position: fixed; z-index: 32; width: 360px; max-height: 60vh; overflow-y: auto; background: var(--bg); color: var(--fg); border: 1px solid rgba(0,0,0,.15); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.2); }
-.dict-popup.hidden { display: none; }
-.dict-popup-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid rgba(0,0,0,.08); font-weight: 600; }
-.dict-popup-head button { border: none; background: none; font-size: 15px; cursor: pointer; color: inherit; }
-.dict-popup-content { padding: 10px 12px; }
 .quiz-question { background: color-mix(in srgb, var(--bg) 60%, transparent); border: 1px solid rgba(0,0,0,.08); border-radius: 10px; padding: 12px; margin: 8px 0; }
 .quiz-option { padding: 6px 8px; border-radius: 8px; }
 .quiz-option:hover { background: rgba(59, 91, 219, .08); }
@@ -145,6 +140,12 @@ body[data-theme="paper"] { --bg: linear-gradient(160deg, #f7f1e3 0%, #efe3c8 100
 .side-tabs { background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .quiz-actions button { border-radius: 8px; }
 .quiz-actions button[data-act="submit"] { background: #3b5bdb; color: #fff; border-color: #3b5bdb; }
+.tl-hint, .tl-error { color: #888; font-size: 13px; }
+.tl-block { border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.tl-orig { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.tl-result { background: color-mix(in srgb, #3b5bdb 8%, transparent); }
+.tl-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+.tl-text { font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
 .switch-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; }
 .exam-colors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0; }
 .exam-color-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; }
@@ -190,10 +191,14 @@ body[data-theme="paper"] { --bg: linear-gradient(160deg, #f7f1e3 0%, #efe3c8 100
 .dict-stats { color: #888; font-size: 12px; }
 .dict-tags { margin: 4px 0; }
 .dict-tag { display: inline-block; margin: 2px 4px 0 0; padding: 1px 8px; border-radius: 10px; background: #eef2ff; color: #3b5bdb; font-size: 11px; }
-.side-panel { width: 380px; max-width: 45vw; border-left: 1px solid rgba(0,0,0,.1); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.side-panel { width: 400px; max-width: 50vw; border-left: 1px solid rgba(0,0,0,.1); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
 .side-resizer { width: 5px; flex: 0 0 auto; cursor: ew-resize; background: transparent; }
 .side-resizer:hover { background: rgba(59, 91, 219, .25); }
 .side-panel.hidden { display: none; }
+.side-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px 6px; }
+.side-title { font-size: 15px; font-weight: 700; }
+.side-head button { border: none; background: none; font-size: 16px; cursor: pointer; color: inherit; opacity: .6; }
+.side-head button:hover { opacity: 1; }
 .side-tabs { display: flex; align-items: center; border-bottom: 1px solid rgba(0,0,0,.1); }
 .side-tabs button { flex: 1; padding: 9px 4px; border: none; background: transparent; color: var(--text); cursor: pointer; font-size: 13px; }
 .side-tabs button.active { color: #3b5bdb; border-bottom: 2px solid #3b5bdb; }

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ReaderApi } from '../src/shared/ipc'
+import type { LibraryItem } from '../src/shared/book'
 import { renderLibrary } from '../src/renderer/components/library'
 
 function mockReader(): void {
@@ -89,5 +90,28 @@ describe('renderLibrary', () => {
     await renderLibrary(container, () => undefined)
     expect(container.querySelector('.lib-empty')?.textContent).toContain('书架为空')
     expect(container.querySelectorAll('.lib-actions button').length).toBeGreaterThanOrEqual(6)
+  })
+
+  it('改名按钮弹出输入框并保存新书名', async () => {
+    mockReader()
+    const item: LibraryItem = { meta: { id: 'b1', title: '旧名', author: '', format: 'txt', addedAt: 1 }, bookmarks: [] }
+    const renames: [string, string][] = []
+    ;(window.reader.library as { list: typeof window.reader.library.list }).list = async () => [item]
+    ;(window.reader.library as { rename: typeof window.reader.library.rename }).rename = async (id, title) => {
+      renames.push([id, title])
+      item.meta.title = title
+      return item
+    }
+    const container = document.createElement('div')
+    await renderLibrary(container, () => undefined)
+    ;(container.querySelector('.book-rename') as HTMLButtonElement).click()
+    await new Promise((r) => setTimeout(r, 0))
+    const input = document.querySelector('.prompt-input') as HTMLInputElement
+    expect(input).not.toBeNull()
+    input.value = '新书名'
+    ;(document.querySelector('[data-act="ok"]') as HTMLButtonElement).click()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(renames).toEqual([['b1', '新书名']])
+    expect(container.querySelector('.book-title')?.textContent).toBe('新书名')
   })
 })

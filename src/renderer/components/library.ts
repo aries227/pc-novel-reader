@@ -1,4 +1,5 @@
 import type { LibraryItem } from '../../shared/book'
+import { promptModal } from './prompt'
 
 declare global {
   interface Window { reader: import('../../shared/ipc').ReaderApi }
@@ -56,7 +57,7 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
     await renderLibrary(container, onOpen)
   })
   header.querySelector('[data-act="web-parse"]')!.addEventListener('click', async () => {
-    const url = prompt('输入网页 URL：')
+    const url = await promptModal('输入网页 URL：')
     if (!url) return
     try {
       const item = await window.reader.web.parse(url)
@@ -87,7 +88,7 @@ function bookCard(item: LibraryItem, onOpen: (id: string) => void, onChanged: ()
     onOpen(item.meta.id)
   })
   card.querySelector('.book-rename')!.addEventListener('click', async () => {
-    const name = prompt('输入新的书名：', item.meta.title)
+    const name = await promptModal('输入新的书名：', item.meta.title)
     if (name === null) return
     try {
       await window.reader.library.rename(item.meta.id, name)

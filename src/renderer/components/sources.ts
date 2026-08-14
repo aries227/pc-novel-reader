@@ -1,4 +1,5 @@
 import { sanitizeHtml } from '../reader/sanitize'
+import { promptModal } from './prompt'
 
 export async function openSourcesModal(container: HTMLElement): Promise<void> {
   const overlay = document.createElement('div')
@@ -53,7 +54,7 @@ export async function openSourcesModal(container: HTMLElement): Promise<void> {
     await refresh()
   })
   overlay.querySelector('[data-act="import-url"]')!.addEventListener('click', async () => {
-    const url = prompt('输入书源 JSON 地址：')
+    const url = await promptModal('输入书源 JSON 地址：')
     if (!url) return
     await window.reader.sources.importUrl(url)
     await refresh()
@@ -73,7 +74,8 @@ export async function openSourcesModal(container: HTMLElement): Promise<void> {
         <button data-add="1">加入书架</button>`
       row.querySelector('[data-open]')!.addEventListener('click', async () => {
         const chapters = await window.reader.sources.chapters(sourceId, r.bookUrl)
-        const idx = Number(prompt(`共 ${chapters.length} 章，输入章节号（1-${chapters.length}）`, '1') ?? '1')
+        const input = await promptModal(`共 ${chapters.length} 章，输入章节号（1-${chapters.length}）`, '1')
+        const idx = Number(input ?? '1')
         const chapter = chapters[Math.max(0, idx - 1)]
         if (!chapter) return
         const html = await window.reader.sources.content(sourceId, chapter.url)

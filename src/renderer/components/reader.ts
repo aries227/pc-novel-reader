@@ -140,6 +140,51 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   attachResize(dictPanel, 'jian-yue-dict-width')
   attachResize(quizPanel, 'jian-yue-quiz-width')
 
+  function attachDrag(panel: HTMLElement, key: string): void {
+    const head = panel.querySelector('.float-head') as HTMLElement
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const [l, t] = saved.split(',').map(Number)
+      if (Number.isFinite(l) && Number.isFinite(t)) {
+        panel.style.left = `${l}px`
+        panel.style.top = `${t}px`
+      }
+    } else {
+      panel.style.left = `${Math.max(8, window.innerWidth - (parseFloat(panel.style.width) || 400) - 16)}px`
+    }
+    let dragging = false
+    let startX = 0
+    let startY = 0
+    let startLeft = 0
+    let startTop = 0
+    head.addEventListener('mousedown', (e) => {
+      if ((e.target as HTMLElement).closest('button')) return
+      dragging = true
+      startX = e.clientX
+      startY = e.clientY
+      startLeft = panel.offsetLeft
+      startTop = panel.offsetTop
+      document.body.style.userSelect = 'none'
+      e.preventDefault()
+    })
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return
+      const left = Math.max(0, Math.min(window.innerWidth - 60, startLeft + (e.clientX - startX)))
+      const top = Math.max(0, Math.min(window.innerHeight - 40, startTop + (e.clientY - startY)))
+      panel.style.left = `${left}px`
+      panel.style.top = `${top}px`
+    })
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return
+      dragging = false
+      document.body.style.userSelect = ''
+      localStorage.setItem(key, `${parseInt(panel.style.left || '0', 10)},${parseInt(panel.style.top || '0', 10)}`)
+    })
+  }
+  attachDrag(tlPanel, 'jian-yue-tl-pos')
+  attachDrag(dictPanel, 'jian-yue-dict-pos')
+  attachDrag(quizPanel, 'jian-yue-quiz-pos')
+
   function openTranslate(): void {
     tlPanel.classList.remove('hidden')
   }

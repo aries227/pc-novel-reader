@@ -149,6 +149,8 @@ body[data-theme="paper"] { --bg: linear-gradient(160deg, #f7f1e3 0%, #efe3c8 100
 .float-panel { position: fixed; right: 16px; top: 64px; width: 400px; max-width: 46vw; max-height: calc(100vh - 84px); background: var(--bg); color: var(--fg); border: 1px solid rgba(0,0,0,.12); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.18); display: flex; flex-direction: column; overflow: hidden; z-index: 40; }
 .float-panel.hidden { display: none; }
 .float-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,.08); font-weight: 700; }
+.float-head { cursor: grab; }
+.float-head:active { cursor: grabbing; }
 .float-head button { border: none; background: none; font-size: 16px; cursor: pointer; color: inherit; opacity: .6; }
 .float-head button:hover { opacity: 1; }
 .panel-resizer { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; cursor: ew-resize; }

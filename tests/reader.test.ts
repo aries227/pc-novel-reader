@@ -151,4 +151,17 @@ describe('renderReader', () => {
     await renderReader(container, 'b1', () => undefined)
     expect(container.querySelector('.reader-title')?.textContent).toContain('第二章')
   })
+  it('面板可通过标题栏拖拽移动', async () => {
+    mockReader()
+    localStorage.removeItem('jian-yue-tl-pos')
+    const container = document.createElement('div')
+    await renderReader(container, 'b1', () => undefined)
+    const head = container.querySelector('.tl-panel .float-head') as HTMLElement
+    head.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }))
+    window.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 120 }))
+    window.dispatchEvent(new MouseEvent('mouseup'))
+    const panel = container.querySelector('.tl-panel') as HTMLElement
+    expect(panel.style.left).toBe('50px')
+    expect(panel.style.top).toBe('20px')
+  })
 })

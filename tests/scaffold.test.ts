@@ -7,7 +7,7 @@ describe('scaffold', () => {
     const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'))
     expect(pkg.main).toBe('./out/main/index.js')
     expect(pkg.scripts.dev).toContain('electron-vite dev')
-    expect(pkg.version).toBe('0.6.3')
+    expect(pkg.version).toBe('0.6.4')
     expect(pkg.build.publish[0].provider).toBe('github')
   })
   it('渲染进程入口存在', () => {

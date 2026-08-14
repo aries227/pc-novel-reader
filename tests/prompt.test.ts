@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { promptModal } from '../src/renderer/components/prompt'
+import { confirmModal, promptModal } from '../src/renderer/components/prompt'
 
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
@@ -32,5 +32,21 @@ describe('promptModal', () => {
     await tick()
     ;(document.querySelector('.prompt-input') as HTMLInputElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await expect(p2).resolves.toBeNull()
+  })
+})
+
+describe('confirmModal', () => {
+  it('点确定返回 true', async () => {
+    const p = confirmModal('删除书籍', '确定删除吗？')
+    await tick()
+    expect(document.querySelector('.confirm-modal')?.textContent).toContain('确定删除吗？')
+    ;(document.querySelector('[data-act="ok"]') as HTMLButtonElement).click()
+    await expect(p).resolves.toBe(true)
+  })
+  it('点取消返回 false', async () => {
+    const p = confirmModal('删除书籍', '确定删除吗？')
+    await tick()
+    ;(document.querySelector('[data-act="cancel"]') as HTMLButtonElement).click()
+    await expect(p).resolves.toBe(false)
   })
 })

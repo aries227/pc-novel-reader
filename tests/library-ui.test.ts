@@ -104,14 +104,34 @@ describe('renderLibrary', () => {
     }
     const container = document.createElement('div')
     await renderLibrary(container, () => undefined)
-    ;(container.querySelector('.book-rename') as HTMLButtonElement).click()
+    ;(container.querySelector('.book-act-rename') as HTMLButtonElement).click()
     await new Promise((r) => setTimeout(r, 0))
-    const input = document.querySelector('.prompt-input') as HTMLInputElement
+    const input = container.querySelector('.book-rename-input') as HTMLInputElement
     expect(input).not.toBeNull()
     input.value = '新书名'
-    ;(document.querySelector('[data-act="ok"]') as HTMLButtonElement).click()
+    ;(container.querySelector('.book-rename-form [data-act="ok"]') as HTMLButtonElement).click()
     await new Promise((r) => setTimeout(r, 0))
     expect(renames).toEqual([['b1', '新书名']])
     expect(container.querySelector('.book-title')?.textContent).toBe('新书名')
+  })
+
+  it('删除按钮确认后移除书籍', async () => {
+    mockReader()
+    const item: LibraryItem = { meta: { id: 'b1', title: '旧名', author: '', format: 'txt', addedAt: 1 }, bookmarks: [] }
+    let list = [item]
+    const removed: string[] = []
+    ;(window.reader.library as { list: typeof window.reader.library.list }).list = async () => list
+    ;(window.reader.library as { remove: typeof window.reader.library.remove }).remove = async (id) => {
+      removed.push(id)
+      list = []
+    }
+    const container = document.createElement('div')
+    await renderLibrary(container, () => undefined)
+    ;(container.querySelector('.book-act-delete') as HTMLButtonElement).click()
+    await new Promise((r) => setTimeout(r, 0))
+    ;(document.querySelector('.confirm-modal [data-act="ok"]') as HTMLButtonElement).click()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(removed).toEqual(['b1'])
+    expect(container.querySelector('.lib-empty')?.textContent).toContain('书架为空')
   })
 })

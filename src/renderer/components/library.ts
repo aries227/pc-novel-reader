@@ -1,5 +1,5 @@
 import type { LibraryItem } from '../../shared/book'
-import { promptModal } from './prompt'
+import { confirmModal, promptModal } from './prompt'
 
 declare global {
   interface Window { reader: import('../../shared/ipc').ReaderApi }
@@ -78,24 +78,84 @@ function bookCard(item: LibraryItem, onOpen: (id: string) => void, onChanged: ()
     ? `<img class="book-cover" src="${item.meta.cover}" alt="" />`
     : `<div class="book-cover book-cover-text" style="background:${coverGradient(item.meta.title)}">${escapeHtml(item.meta.title.slice(0, 4))}</div>`
   card.innerHTML = `
-    ${cover}
-    <div class="book-title">${escapeHtml(item.meta.title)}</div>
-    <div class="book-author">${escapeHtml(item.meta.author || '未知作者')}</div>
-    <div class="book-progress">${item.progress ? `${Math.round((item.progress.chapterIndex / 1000) * 100)}%` : '未读'}</div>
-    <button class="book-rename" title="改名">改名</button>`
+    <div class="book-cover-wrap">
+      ${cover}
+      <div class="book-card-actions">
+        <button class="book-act-rename" title="改名">✎</button>
+        <button class="book-act-delete" title="删除">✕</button>
+      </div>
+    </div>
+    <div class="book-title" data-book-title title="点击改名">${escapeHtml(item.meta.title)}</div>
+    <div class="book-meta">
+      <span class="book-author">${escapeHtml(item.meta.author || '未知作者')}</span>
+      <span class="book-progress">${item.progress ? `${Math.round((item.progress.chapterIndex / 1000) * 100)}%` : '未读'}</span>
+    </div>
+    <div class="book-rename-form hidden">
+      <input class="book-rename-input" value="${escapeHtml(item.meta.title)}" />
+      <div class="book-rename-btns">
+        <button data-act="ok">确定</button>
+        <button data-act="cancel">取消</button>
+      </div>
+    </div>`
   card.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('.book-rename')) return
+    if ((e.target as HTMLElement).closest('.book-card-actions, .book-rename-form')) return
     onOpen(item.meta.id)
   })
-  card.querySelector('.book-rename')!.addEventListener('click', async () => {
-    const name = await promptModal('输入新的书名：', item.meta.title)
-    if (name === null) return
+
+  const titleEl = card.querySelector('[data-book-title]') as HTMLElement
+  const renameForm = card.querySelector('.book-rename-form') as HTMLElement
+  const input = card.querySelector('.book-rename-input') as HTMLInputElement
+
+  function openRename(): void {
+    titleEl.classList.add('hidden')
+    renameForm.classList.remove('hidden')
+    input.value = item.meta.title
+    input.focus()
+    input.select()
+  }
+  function closeRename(): void {
+    renameForm.classList.add('hidden')
+    titleEl.classList.remove('hidden')
+  }
+  async function submitRename(): Promise<void> {
+    const name = input.value.trim()
+    if (!name) return
     try {
       await window.reader.library.rename(item.meta.id, name)
       await onChanged()
     } catch (err) {
       alert(err instanceof Error ? err.message : '改名失败')
+      closeRename()
     }
+  }
+
+  titleEl.addEventListener('click', (e) => {
+    e.stopPropagation()
+    openRename()
+  })
+  card.querySelector('.book-act-rename')!.addEventListener('click', (e) => {
+    e.stopPropagation()
+    openRename()
+  })
+  renameForm.querySelector('[data-act="ok"]')!.addEventListener('click', (e) => {
+    e.stopPropagation()
+    void submitRename()
+  })
+  renameForm.querySelector('[data-act="cancel"]')!.addEventListener('click', (e) => {
+    e.stopPropagation()
+    closeRename()
+  })
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation()
+    if (e.key === 'Enter') void submitRename()
+    else if (e.key === 'Escape') closeRename()
+  })
+  card.querySelector('.book-act-delete')!.addEventListener('click', async (e) => {
+    e.stopPropagation()
+    const ok = await confirmModal('删除书籍', `确定删除《${item.meta.title}》吗？删除后书架不再显示这本书。`)
+    if (!ok) return
+    await window.reader.library.remove(item.meta.id)
+    await onChanged()
   })
   return card
 }

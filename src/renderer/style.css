@@ -157,6 +157,23 @@ body[data-theme="paper"] { --bg: linear-gradient(160deg, #f7f1e3 0%, #efe3c8 100
 .lib-actions button:hover { background: #f0edf5; transform: translateY(-1px); }
 .book-card { transition: transform .12s; }
 .book-card:hover { transform: translateY(-3px); }
+.book-card { position: relative; }
+.book-cover-wrap { position: relative; }
+.book-card-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+.book-card:hover .book-card-actions, .book-card:focus-within .book-card-actions { opacity: 1; }
+.book-card-actions button { width: 26px; height: 26px; border-radius: 50%; border: none; background: rgba(0,0,0,.55); color: #fff; cursor: pointer; font-size: 12px; line-height: 1; }
+.book-card-actions button:hover { background: rgba(0,0,0,.75); }
+.book-card-actions .book-act-delete:hover { background: #c0392b; }
+.book-title { cursor: pointer; }
+.book-title:hover { color: var(--accent); }
+.book-meta { display: flex; justify-content: space-between; gap: 6px; }
+.book-rename-form { display: flex; flex-direction: column; gap: 6px; }
+.book-rename-form.hidden { display: none; }
+.book-rename-input { width: 100%; padding: 5px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+.book-rename-btns { display: flex; gap: 6px; justify-content: flex-end; }
+.book-rename-btns button { padding: 3px 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 12px; }
+.book-rename-btns [data-act="ok"] { background: #3b5bdb; color: #fff; border-color: #3b5bdb; }
+.lib-header { background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 5; }
 .vocab-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .vocab-tools button { padding: 5px 12px; border: 1px solid #3b5bdb; background: #eef2ff; color: #3b5bdb; border-radius: 8px; cursor: pointer; font-size: 12px; }
 .dict-stats { color: #888; font-size: 12px; }

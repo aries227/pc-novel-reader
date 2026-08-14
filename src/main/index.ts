@@ -1,4 +1,4 @@
-import { app, BrowserWindow, protocol } from 'electron'
+import { app, BrowserWindow, Menu, protocol } from 'electron'
 import { join } from 'node:path'
 import { createDictionary } from './dictionary'
 import { registerReaderProtocol } from './protocol'
@@ -14,6 +14,8 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'reader-file', privileges: { secure: true, supportFetchAPI: true, stream: true, bypassCSP: false } }
 ])
 
+Menu.setApplicationMenu(null)
+
 let win: BrowserWindow | null = null
 let uploadManager: ReturnType<typeof createUploadServer> | null = null
 
@@ -24,6 +26,7 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     title: '简阅',
+    autoHideMenuBar: true,
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.cjs'),
       contextIsolation: true,

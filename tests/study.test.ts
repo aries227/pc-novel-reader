@@ -163,4 +163,23 @@ describe('openQuizModal', () => {
     expect(flags[1].force).toBe(true)
     expect(container.querySelector('.quiz-body h3')?.textContent).toContain('第2套')
   })
+  it('修改题量会保存到设置', async () => {
+    const mock = baseMock()
+    const patches: unknown[] = []
+    const orig = mock.settings.set
+    mock.settings.set = async (patch) => {
+      patches.push(patch)
+      return orig(patch)
+    }
+    install(mock)
+    const container = document.createElement('div')
+    await openQuizModal(container, { bookId: 'b1', chapterTitle: '第一章', chapterText: '正文' })
+    await tick()
+    const sel = container.querySelector('[data-quiz-count]') as HTMLSelectElement
+    sel.value = '8'
+    sel.dispatchEvent(new Event('change'))
+    await tick()
+    const patch = [...patches].reverse().find((p) => (p as { aiDefaults?: unknown }).aiDefaults) as { aiDefaults: { quizCount: number } }
+    expect(patch.aiDefaults.quizCount).toBe(8)
+  })
 })

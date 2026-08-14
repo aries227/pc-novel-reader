@@ -116,4 +116,17 @@ describe('generateQuiz', () => {
     const sys = lastBody.messages?.[0]?.content as string
     expect(sys).toContain('只出翻译题')
   })
+  it('考研难度写入难度要求', async () => {
+    await generateQuiz({
+      apiKey: 'test-key',
+      baseUrl: base,
+      model: 'deepseek-chat',
+      chapterTitle: '第一章',
+      chapterText: '内容',
+      difficulty: '考研'
+    })
+    const sys = lastBody.messages?.[0]?.content as string
+    expect(sys).toContain('考研英语')
+    expect(sys).toContain('严格匹配该难度')
+  })
 })

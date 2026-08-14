@@ -130,8 +130,18 @@ export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions
     opt.selected = d === quizDifficulty
     diffSel.appendChild(opt)
   })
-  countSel.addEventListener('change', () => { quizCount = Number(countSel.value) })
-  diffSel.addEventListener('change', () => { quizDifficulty = diffSel.value })
+  async function saveQuizPrefs(): Promise<void> {
+    const cur = await window.reader.settings.get()
+    await window.reader.settings.set({ aiDefaults: { ...cur.aiDefaults, quizCount, quizDifficulty } })
+  }
+  countSel.addEventListener('change', () => {
+    quizCount = Number(countSel.value)
+    void saveQuizPrefs()
+  })
+  diffSel.addEventListener('change', () => {
+    quizDifficulty = diffSel.value
+    void saveQuizPrefs()
+  })
 
   let quiz: Quiz | null = null
   const answers = new Map<string, string>()

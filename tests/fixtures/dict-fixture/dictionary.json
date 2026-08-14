@@ -1,0 +1,12 @@
+{
+  "words": {
+    "hello": { "t": "你好；喂", "p": "həˈloʊ" },
+    "run": { "t": "跑；运行", "p": "rʌn" },
+    "book": { "t": "书" }
+  },
+  "forms": {
+    "ran": "run",
+    "running": "run",
+    "books": "book"
+  }
+}

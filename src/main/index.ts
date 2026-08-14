@@ -1,11 +1,13 @@
 import { app, BrowserWindow, protocol } from 'electron'
 import { join } from 'node:path'
+import { createDictionary } from './dictionary'
 import { registerReaderProtocol } from './protocol'
 import { LibraryStore } from './library'
 import { SettingsStore } from './settings'
 import { registerIpc } from './ipc'
 import { createUploadServer } from './upload-server'
 import { checkForUpdatesOnStart, registerUpdater } from './updater'
+import { VocabularyStore } from './vocabulary'
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'reader-file', privileges: { secure: true, supportFetchAPI: true, stream: true, bypassCSP: false } }
@@ -41,6 +43,9 @@ app.whenReady().then(async () => {
   const userData = app.getPath('userData')
   const settings = new SettingsStore(userData)
   const s = await settings.get()
+  const dictDir = app.isPackaged ? join(process.resourcesPath, 'resources') : join(app.getAppPath(), 'resources')
+  const dictionary = await createDictionary(dictDir)
+  const vocab = new VocabularyStore(userData)
   registerUpdater()
   uploadManager = createUploadServer(
     { inbox: join(userData, 'upload-inbox'), books: join(userData, 'books') },
@@ -53,7 +58,9 @@ app.whenReady().then(async () => {
     join(userData, 'books'),
     join(userData, 'sources.json'),
     join(userData, 'cache'),
-    join(userData, 'assets')
+    join(userData, 'assets'),
+    dictionary,
+    vocab
   )
   createWindow()
   checkForUpdatesOnStart()

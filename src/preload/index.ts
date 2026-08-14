@@ -30,7 +30,18 @@ const api: ReaderApi = {
   ai: {
     test: (provider) => ipcRenderer.invoke('ai:test', provider),
     fetchModels: (provider) => ipcRenderer.invoke('ai:fetchModels', provider),
-    chat: (req: AiChatRequest) => ipcRenderer.invoke('ai:chat', req)
+    chat: (req: AiChatRequest) => ipcRenderer.invoke('ai:chat', req),
+    quiz: (req) => ipcRenderer.invoke('ai:quiz', req)
+  },
+  dictionary: {
+    lookup: (word) => ipcRenderer.invoke('dictionary:lookup', word),
+    examples: (word) => ipcRenderer.invoke('dictionary:examples', word)
+  },
+  vocab: {
+    list: () => ipcRenderer.invoke('vocab:list'),
+    add: (input) => ipcRenderer.invoke('vocab:add', input),
+    remove: (id) => ipcRenderer.invoke('vocab:remove', id),
+    update: (id, patch) => ipcRenderer.invoke('vocab:update', id, patch)
   },
   upload: {
     status: () => ipcRenderer.invoke('upload:status'),

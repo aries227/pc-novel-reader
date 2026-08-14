@@ -1,0 +1,9 @@
+{
+  "hello": [
+    { "e": "Say hello to your mum for me.", "cn": "代我问候你妈妈。" }
+  ],
+  "run": [
+    { "e": "I run every morning.", "cn": "我每天早上跑步。" },
+    { "e": "The program will run.", "cn": "程序会运行。" }
+  ]
+}

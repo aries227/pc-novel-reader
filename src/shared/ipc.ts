@@ -21,6 +21,49 @@ export interface AiChatRequest {
   jsonMode?: boolean
 }
 
+export interface DictEntry {
+  word: string
+  translation: string
+  phonetic?: string
+}
+
+export interface ExamplePair {
+  en: string
+  cn: string
+}
+
+export type QuizQuestionType = 'reading' | 'choice' | 'translation' | 'grammar'
+
+export interface QuizQuestion {
+  id: string
+  type: QuizQuestionType
+  question: string
+  options?: string[]
+  answer: string
+  explanation: string
+}
+
+export interface Quiz {
+  title: string
+  questions: QuizQuestion[]
+}
+
+export type ReviewState = 'new' | 'learning' | 'mastered'
+
+export interface VocabEntry {
+  id: string
+  word: string
+  phonetic?: string
+  translation?: string
+  examples: string[]
+  contextSentence?: string
+  sourceBook?: string
+  sourceChapter?: string
+  addedAt: number
+  reviewState: ReviewState
+  note?: string
+}
+
 export interface ReaderApi {
   library: {
     list(): Promise<LibraryItem[]>
@@ -53,6 +96,17 @@ export interface ReaderApi {
     test(provider: AiProvider): Promise<{ ok: boolean; message: string; models: string[] }>
     fetchModels(provider: AiProvider): Promise<string[]>
     chat(req: AiChatRequest): Promise<string>
+    quiz(req: { bookId: string; chapterTitle: string; chapterText: string }): Promise<Quiz>
+  }
+  dictionary: {
+    lookup(word: string): Promise<DictEntry | null>
+    examples(word: string): Promise<ExamplePair[]>
+  }
+  vocab: {
+    list(): Promise<VocabEntry[]>
+    add(input: Omit<VocabEntry, 'id' | 'addedAt' | 'reviewState' | 'examples'> & { examples?: string[] }): Promise<VocabEntry>
+    remove(id: string): Promise<void>
+    update(id: string, patch: Partial<Pick<VocabEntry, 'reviewState' | 'note' | 'translation'>>): Promise<VocabEntry>
   }
   upload: {
     status(): Promise<UploadStatus>

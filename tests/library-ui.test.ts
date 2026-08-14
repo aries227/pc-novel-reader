@@ -33,7 +33,18 @@ function mockReader(): void {
     ai: {
       test: async () => ({ ok: true, message: '连接成功', models: ['m1'] }),
       fetchModels: async () => ['m1'],
-      chat: async () => ''
+      chat: async () => '',
+      quiz: async () => ({ title: '测试练习', questions: [] })
+    },
+    dictionary: {
+      lookup: async () => ({ word: 'hello', translation: '你好' }),
+      examples: async () => []
+    },
+    vocab: {
+      list: async () => [],
+      add: async (i) => ({ ...i, examples: [], id: 'v1', addedAt: 1, reviewState: 'new' }),
+      remove: async () => undefined,
+      update: async (id, patch) => ({ id, word: 'hello', examples: [], addedAt: 1, reviewState: 'new', ...patch })
     },
     upload: {
       status: async () => ({ running: false }),

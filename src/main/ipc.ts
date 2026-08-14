@@ -6,7 +6,9 @@ import type { AiProvider, Chapter, Progress, Settings } from '../shared/book'
 import type { AiChatRequest } from '../shared/ipc'
 import { chatCompletion, fetchModels, resolveAiProvider, testProvider } from './ai'
 import type { BookSource } from '../shared/source'
+import type { Dictionary } from './dictionary'
 import { LibraryStore } from './library'
+import { generateQuiz } from './quiz'
 import { pickBackgroundImage, pickFontFile } from './assets'
 import { fetchHtml } from './network'
 import { parseDocx } from './parsers/docx'
@@ -20,6 +22,7 @@ import { createCachedEngine, fetchChapterList, searchSource } from './sources/en
 import { normalizeSource } from './sources/validate'
 import { translateText } from './translate'
 import type { UploadManager } from './upload-server'
+import type { VocabularyStore } from './vocabulary'
 
 export function registerIpc(
   library: LibraryStore,
@@ -28,7 +31,9 @@ export function registerIpc(
   booksDir: string,
   sourcesFile: string,
   sourceCacheDir: string,
-  assetsDir: string
+  assetsDir: string,
+  dictionary: Dictionary,
+  vocab: VocabularyStore
 ): void {
   const sourceEngine = createCachedEngine(sourceCacheDir)
 
@@ -115,6 +120,24 @@ export function registerIpc(
       jsonMode: req.jsonMode
     })
   })
+  ipcMain.handle('ai:quiz', async (_e, req: { bookId: string; chapterTitle: string; chapterText: string }) => {
+    const s = await settings.get()
+    const { provider, model } = resolveAiProvider(s, 'quiz')
+    if (!provider.apiKey?.trim()) throw new Error('请先在设置中填写 API Key')
+    return generateQuiz({
+      apiKey: provider.apiKey,
+      baseUrl: provider.baseUrl,
+      model,
+      chapterTitle: req.chapterTitle,
+      chapterText: req.chapterText
+    })
+  })
+  ipcMain.handle('dictionary:lookup', (_e, word: string) => dictionary.lookup(word))
+  ipcMain.handle('dictionary:examples', (_e, word: string) => dictionary.examples(word))
+  ipcMain.handle('vocab:list', () => vocab.list())
+  ipcMain.handle('vocab:add', (_e, input: Parameters<VocabularyStore['add']>[0]) => vocab.add(input))
+  ipcMain.handle('vocab:remove', (_e, id: string) => vocab.remove(id))
+  ipcMain.handle('vocab:update', (_e, id: string, patch: Parameters<VocabularyStore['update']>[1]) => vocab.update(id, patch))
   ipcMain.handle('upload:status', () => uploadManager.status())
   ipcMain.handle('upload:start', () => uploadManager.start())
   ipcMain.handle('upload:stop', () => { uploadManager.stop() })

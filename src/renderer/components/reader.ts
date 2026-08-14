@@ -3,6 +3,7 @@ import type { PdfControls } from '../reader/pdf-view'
 import { canNext, nextPage, prevPage } from '../reader/pager'
 import { sanitizeHtml } from '../reader/sanitize'
 import { applySettingsToBody, resolveFontFamily } from '../theme'
+import { openQuizModal, openVocabModal } from './study'
 
 export async function renderReader(container: HTMLElement, bookId: string, onBack: () => void): Promise<void> {
   const data = await window.reader.book.open(bookId)
@@ -20,6 +21,8 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <span class="reader-spacer"></span>
         <button data-act="toc">目录</button>
         <button data-act="bookmark">书签</button>
+        <button data-act="vocab">生词本</button>
+        <button data-act="quiz">练习</button>
         <button data-act="translate">翻译</button>
         <button data-act="settings">设置</button>
         <button data-act="upload">扫码上传</button>
@@ -39,8 +42,12 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
         <label>模式 <select data-set="mode"><option value="paged">翻页</option><option value="scroll">滚动</option></select></label>
       </div>
       <div class="translate-panel hidden">
-        <div class="translate-head"><span>译文</span><button data-act="translate-close">×</button></div>
+        <div class="translate-head"><span class="translate-title">译文</span><button data-act="translate-close">×</button></div>
         <div class="translate-content"></div>
+      </div>
+      <div class="word-popup hidden">
+        <button data-act="dict-lookup">查词</button>
+        <button data-act="vocab-add">收藏</button>
       </div>
     </div>`
 
@@ -50,6 +57,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   const tocEl = root.querySelector('.toc-list') as HTMLElement
   const pctEl = root.querySelector('.reader-pct') as HTMLElement
   const progressEl = root.querySelector('.reader-progress') as HTMLInputElement
+  const popupEl = root.querySelector('.word-popup') as HTMLElement
 
   function applyTheme(s: Settings): void {
     applySettingsToBody(s)
@@ -88,6 +96,17 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     if (chapters.length === 0) return
     await window.reader.book.addBookmark({ bookId, chapterIndex, paragraphIndex: 0, excerpt: chapters[chapterIndex].title })
   })
+  root.querySelector('[data-act="vocab"]')!.addEventListener('click', () => {
+    void openVocabModal(container)
+  })
+  root.querySelector('[data-act="quiz"]')!.addEventListener('click', () => {
+    const chapter = chapters[chapterIndex]
+    void openQuizModal(container, {
+      bookId,
+      chapterTitle: chapter?.title ?? meta.title,
+      chapterText: pageEl.innerText
+    })
+  })
   root.querySelector('[data-act="upload"]')!.addEventListener('click', () => container.dispatchEvent(new CustomEvent('open-upload')))
   root.querySelector('[data-act="settings"]')!.addEventListener('click', () => root.querySelector('.reader-settings')!.classList.toggle('hidden'))
   root.querySelector('[data-act="translate"]')!.addEventListener('click', async () => {
@@ -107,6 +126,98 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   })
   root.querySelector('[data-act="translate-close"]')!.addEventListener('click', () => {
     root.querySelector('.translate-panel')!.classList.add('hidden')
+  })
+
+  function hideWordPopup(): void {
+    popupEl.classList.add('hidden')
+  }
+
+  function showWordPopup(sel: Selection | null): void {
+    hideWordPopup()
+    if (!sel || sel.isCollapsed || !pageEl.contains(sel.anchorNode)) return
+    const text = sel.toString().trim()
+    if (!/^[A-Za-z][A-Za-z' -]{0,39}$/.test(text)) return
+    const rect = sel.getRangeAt(0).getBoundingClientRect()
+    popupEl.style.left = `${Math.max(0, Math.min(rect.left, window.innerWidth - 180))}px`
+    popupEl.style.top = `${rect.bottom + 6}px`
+    popupEl.dataset.word = text
+    popupEl.classList.remove('hidden')
+  }
+
+  function paragraphText(sel: Selection | null): string {
+    if (!sel?.anchorNode) return ''
+    const el = sel.anchorNode.nodeType === Node.TEXT_NODE ? sel.anchorNode.parentElement : (sel.anchorNode as Element)
+    const p = el?.closest?.('p, li, h1, h2, h3, h4, blockquote, div')
+    return p?.textContent?.trim() ?? ''
+  }
+
+  async function addVocab(word: string, context: string): Promise<void> {
+    const entry = await window.reader.dictionary.lookup(word)
+    const examples = await window.reader.dictionary.examples(word)
+    await window.reader.vocab.add({
+      word: entry?.word ?? word,
+      translation: entry?.translation,
+      phonetic: entry?.phonetic,
+      examples: examples.map((x) => `${x.en}（${x.cn}）`),
+      contextSentence: context,
+      sourceBook: meta.title,
+      sourceChapter: chapters[chapterIndex]?.title
+    })
+  }
+
+  async function showDictPanel(word: string): Promise<void> {
+    const panel = root.querySelector('.translate-panel') as HTMLElement
+    const title = panel.querySelector('.translate-title') as HTMLElement
+    const contentEl = panel.querySelector('.translate-content') as HTMLElement
+    title.textContent = '词典'
+    contentEl.innerHTML = '查询中…'
+    panel.classList.remove('hidden')
+    const entry = await window.reader.dictionary.lookup(word)
+    const examples = await window.reader.dictionary.examples(word)
+    if (!entry) {
+      contentEl.innerHTML = `<p>未找到「${esc(word)}」的释义。</p>`
+      return
+    }
+    const ex = examples.map((x) => `<li>${esc(x.en)}<br /><span class="dict-cn">${esc(x.cn)}</span></li>`).join('')
+    contentEl.innerHTML = `
+      <div class="dict-head"><strong>${esc(entry.word)}</strong>${entry.phonetic ? `<span class="vocab-phonetic">${esc(entry.phonetic)}</span>` : ''}</div>
+      <p class="dict-trans">${esc(entry.translation)}</p>
+      ${ex ? `<ul class="dict-examples">${ex}</ul>` : ''}
+      <button data-act="dict-add" class="dict-add">加入生词本</button>`
+    contentEl.querySelector('[data-act="dict-add"]')!.addEventListener('click', async () => {
+      await addVocab(entry.word, paragraphText(window.getSelection()))
+      const btn = contentEl.querySelector('[data-act="dict-add"]') as HTMLButtonElement
+      btn.textContent = '已加入 ✓'
+      btn.disabled = true
+    })
+  }
+
+  pageEl.addEventListener('mouseup', () => showWordPopup(window.getSelection()))
+  document.addEventListener('mousedown', (e) => {
+    if (!popupEl.contains(e.target as Node)) hideWordPopup()
+  })
+  popupEl.querySelector('[data-act="dict-lookup"]')!.addEventListener('click', () => {
+    const word = popupEl.dataset.word ?? ''
+    hideWordPopup()
+    void showDictPanel(word)
+  })
+  popupEl.querySelector('[data-act="vocab-add"]')!.addEventListener('click', async () => {
+    const word = popupEl.dataset.word ?? ''
+    const context = paragraphText(window.getSelection())
+    hideWordPopup()
+    const panel = root.querySelector('.translate-panel') as HTMLElement
+    const title = panel.querySelector('.translate-title') as HTMLElement
+    const contentEl = panel.querySelector('.translate-content') as HTMLElement
+    try {
+      await addVocab(word, context)
+      title.textContent = '生词本'
+      contentEl.textContent = `已加入生词本 ✓`
+      panel.classList.remove('hidden')
+    } catch (err) {
+      title.textContent = '生词本'
+      contentEl.textContent = err instanceof Error ? err.message : '收藏失败'
+      panel.classList.remove('hidden')
+    }
   })
 
   const panel = root.querySelector('.reader-settings') as HTMLElement
@@ -172,4 +283,8 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   } else {
     renderChapter()
   }
+}
+
+function esc(v: string): string {
+  return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

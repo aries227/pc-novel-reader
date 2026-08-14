@@ -13,6 +13,8 @@
 - 网页解析：粘贴任意网页 URL，自动提取正文生成书籍。
 - AI 接入：支持多家 OpenAI 兼容供应商（DeepSeek、OpenAI、硅基流动、Moonshot 等），每个供应商可独立配置接口地址、API Key 与模型，一键测试连接、拉取模型列表，翻译与练习可分别选择默认供应商和模型。
 - AI 翻译：可翻译选中文字或整章内容，输出到右下角面板。
+- 学习功能：内置离线英汉词典（ECDICT）与 Tatoeba 中英例句；阅读时选中单词可查词、收藏到生词本，生词本支持掌握状态管理。
+- AI 本章练习：基于当前章节生成 1 道阅读理解题和 3 道练习题（选择题/翻译题/语法题混合），提交后自动判分并显示解析。
 
 ## 开发运行
 
@@ -52,7 +54,7 @@ npm run dist
 
 ```bash
 npm run dist
-gh release create v0.3.0 "dist/简阅 Setup 0.3.0.exe" "dist/简阅 Setup 0.3.0.exe.blockmap" "dist/简阅 0.3.0.exe" "dist/latest.yml" --title "v0.3.0" --notes "更新说明"
+gh release create v0.4.0 "dist/简阅 Setup 0.4.0.exe" "dist/简阅 Setup 0.4.0.exe.blockmap" "dist/简阅 0.4.0.exe" "dist/latest.yml" --title "v0.4.0" --notes "更新说明"
 ```
 
 ## 扫码上传
@@ -88,6 +90,25 @@ netsh advfirewall firewall add rule name="jian-yue-upload" dir=in action=allow p
 - 旧版本已填写的 DeepSeek API Key 会自动迁移为默认供应商，无需重新配置。
 
 翻译用法：阅读页点击工具栏「翻译」按钮——选中了文字就翻译选中片段，否则翻译当前整章；译文显示在右下角面板。
+
+## 学习功能
+
+### 查词与生词本
+
+1. 阅读时用鼠标选中单词，会弹出「查词 / 收藏」小菜单。
+2. 查词：内置 ECDICT 英汉词典（约 2.5 万高频词 + 词形变化），显示音标、中文释义与 Tatoeba 中英例句，也可一键加入生词本。
+3. 收藏：自动保存单词、释义、所在句子、书名与章节。
+4. 生词本：阅读页工具栏「生词本」可查看全部生词，标记为新词 / 学习中 / 已掌握，或删除。
+
+### AI 本章练习
+
+- 阅读页工具栏「练习」基于当前章节内容生成 1 道阅读理解题和 3 道练习题（选择题 / 翻译题 / 语法题混合），做完提交自动判分，并显示每题解析。
+- 可在「设置 → AI 服务」中为「练习」单独选择供应商与模型；未配置 Key 时会提示先去设置。
+
+### 数据与版权
+
+- 词典数据来自开源项目 [ECDICT](https://github.com/skywind3000/ECDICT)，例句来自 [Tatoeba](https://tatoeba.org) 中英句对。
+- 词典与例句数据随应用离线内置，查词无需联网。
 
 ## 书源使用
 

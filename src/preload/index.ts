@@ -75,7 +75,13 @@ const api: ReaderApi = {
   },
   web: {
     parse: (url) => ipcRenderer.invoke('web:parse', url),
-    toEpub: (url) => ipcRenderer.invoke('web:toEpub', url)
+    toEpub: (url) => ipcRenderer.invoke('web:toEpub', url),
+    toEpubBatch: (urls) => ipcRenderer.invoke('web:toEpubBatch', urls),
+    onToEpubProgress: (cb) => {
+      const listener = (_e: unknown, s: { message: string; percent: number; current: number; total: number }) => cb(s)
+      ipcRenderer.on('web:toepub-progress', listener)
+      return () => ipcRenderer.removeListener('web:toepub-progress', listener)
+    }
   },
   update: {
     check: () => ipcRenderer.invoke('update:check'),

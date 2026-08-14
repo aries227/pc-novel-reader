@@ -146,6 +146,8 @@ export interface ReaderApi {
   web: {
     parse(url: string): Promise<LibraryItem>
     toEpub(url: string): Promise<LibraryItem>
+    toEpubBatch(urls: string[]): Promise<LibraryItem[]>
+    onToEpubProgress(cb: (s: { message: string; percent: number; current: number; total: number }) => void): () => void
   }
   update: {
     check(): Promise<void>

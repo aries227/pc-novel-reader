@@ -6,9 +6,12 @@ import { sanitizeHtml } from '../reader/sanitize'
 import { applyExamColors } from '../reader/exam-colors'
 import { applySettingsToBody, resolveFontFamily } from '../theme'
 import { createQuizWidget, openVocabModal } from './study'
+import { hideLoading, showLoading } from './loading'
 
 export async function renderReader(container: HTMLElement, bookId: string, onBack: () => void): Promise<void> {
+  showLoading('正在打开书籍…')
   const data = await window.reader.book.open(bookId)
+  hideLoading()
   if (!data) return
   const { meta, chapters } = data
   const saved = await window.reader.book.getProgress(bookId)
@@ -299,12 +302,15 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     const selected = sel?.toString().trim() ?? ''
     const text = selected && anchor && pageEl.contains(anchor) ? selected : pageEl.innerText.slice(0, 8000)
     try {
+      showLoading('翻译中…')
       const translated = await window.reader.translate.translate(text)
       translateContent.innerHTML = `
         <div class="tl-block tl-orig"><div class="tl-label">原文</div><div class="tl-text">${esc(text)}</div></div>
         <div class="tl-block tl-result"><div class="tl-label">译文</div><div class="tl-text">${esc(translated)}</div></div>`
     } catch (err) {
       translateContent.innerHTML = `<p class="tl-error">${esc(err instanceof Error ? err.message : '翻译失败')}</p>`
+    } finally {
+      hideLoading()
     }
   })
   root.querySelector('[data-act="tl-close"]')!.addEventListener('click', () => tlPanel.classList.add('hidden'))

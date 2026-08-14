@@ -71,7 +71,7 @@ function mockReader(): void {
       content: async () => '',
       addBook: async () => ({ meta: { id: 'x', title: 'x', author: '', format: 'source', addedAt: 1 }, bookmarks: [] })
     },
-    web: { parse: async () => ({ meta: { id: 'x', title: 'x', author: '', format: 'web', addedAt: 1 }, bookmarks: [] }), toEpub: async () => ({ meta: { id: 'x', title: 'x', author: '', format: 'epub', addedAt: 1 }, bookmarks: [] }) },
+    web: { parse: async () => ({ meta: { id: 'x', title: 'x', author: '', format: 'web', addedAt: 1 }, bookmarks: [] }), toEpub: async () => ({ meta: { id: 'x', title: 'x', author: '', format: 'epub', addedAt: 1 }, bookmarks: [] }), toEpubBatch: async () => [], onToEpubProgress: () => () => undefined },
     update: {
       check: async () => undefined,
       install: async () => undefined,

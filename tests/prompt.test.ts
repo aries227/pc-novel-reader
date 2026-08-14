@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { confirmModal, promptModal } from '../src/renderer/components/prompt'
+import { confirmModal, promptModal, promptTextModal } from '../src/renderer/components/prompt'
 
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
@@ -48,5 +48,22 @@ describe('confirmModal', () => {
     await tick()
     ;(document.querySelector('[data-act="cancel"]') as HTMLButtonElement).click()
     await expect(p).resolves.toBe(false)
+  })
+})
+
+describe('promptTextModal', () => {
+  it('多行输入确定后返回全文', async () => {
+    const p = promptTextModal('输入多个 URL', '每行一个')
+    await tick()
+    const input = document.querySelector('.prompt-text') as HTMLTextAreaElement
+    input.value = 'https://a.example/1\nhttps://a.example/2'
+    ;(document.querySelector('[data-act="ok"]') as HTMLButtonElement).click()
+    await expect(p).resolves.toBe('https://a.example/1\nhttps://a.example/2')
+  })
+  it('取消返回 null', async () => {
+    const p = promptTextModal('输入多个 URL')
+    await tick()
+    ;(document.querySelector('[data-act="cancel"]') as HTMLButtonElement).click()
+    await expect(p).resolves.toBeNull()
   })
 })

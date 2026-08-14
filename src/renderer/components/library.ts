@@ -1,5 +1,6 @@
 import type { LibraryItem } from '../../shared/book'
-import { confirmModal, promptModal } from './prompt'
+import { confirmModal, promptModal, promptTextModal } from './prompt'
+import { hideLoading, showLoading, updateLoading } from './loading'
 
 declare global {
   interface Window { reader: import('../../shared/ipc').ReaderApi }
@@ -56,27 +57,43 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
   header.querySelector('[data-act="add-files"]')!.addEventListener('click', async () => {
     const paths = await window.reader.dialog.openFiles()
     if (paths.length) {
-      await window.reader.library.addFiles(paths)
-      await renderLibrary(container, onOpen)
+      showLoading('正在导入书籍…')
+      try {
+        await window.reader.library.addFiles(paths)
+        await renderLibrary(container, onOpen)
+      } finally {
+        hideLoading()
+      }
     }
   })
   header.querySelector('[data-act="add-folder"]')!.addEventListener('click', async () => {
-    await window.reader.library.addFolder()
-    await renderLibrary(container, onOpen)
+    showLoading('正在导入书籍…')
+    try {
+      await window.reader.library.addFolder()
+      await renderLibrary(container, onOpen)
+    } finally {
+      hideLoading()
+    }
   })
   header.querySelector('[data-act="webtoepub"]')!.addEventListener('click', async () => {
-    const url = await promptModal('输入小说目录页 URL（WebToEpub）')
-    if (!url) return
+    const text = await promptTextModal('批量导入 Web 小说（每行一个目录页 URL）', 'https://example.com/book1\nhttps://example.com/book2')
+    if (!text) return
+    const urls = text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
+    if (!urls.length) return
     const btn = header.querySelector('[data-act="webtoepub"]') as HTMLButtonElement
     btn.disabled = true
     btn.textContent = '转换中…'
+    showLoading('正在批量转换 EPUB…', 0)
+    const unsub = window.reader.web.onToEpubProgress((s) => updateLoading(s.message, s.percent))
     try {
-      const item = await window.reader.web.toEpub(url)
-      alert(`已转换《${item.meta.title}》并加入书架`)
+      const items = await window.reader.web.toEpubBatch(urls)
+      alert(`批量转换完成：新增 ${items.length} 本书`)
       await refresh()
     } catch (err) {
       alert(err instanceof Error ? err.message : '转换失败')
     } finally {
+      unsub()
+      hideLoading()
       btn.disabled = false
       btn.textContent = '网页转EPUB'
     }
@@ -89,11 +106,14 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
   header.querySelector('[data-act="web-parse"]')!.addEventListener('click', async () => {
     const url = await promptModal('输入网页 URL：')
     if (!url) return
+    showLoading('正在解析网页…')
     try {
       const item = await window.reader.web.parse(url)
       onOpen(item.meta.id)
     } catch (err) {
       alert(err instanceof Error ? err.message : '解析失败')
+    } finally {
+      hideLoading()
     }
   })
   header.querySelector('[data-act="upload"]')!.addEventListener('click', () => container.dispatchEvent(new CustomEvent('open-upload')))

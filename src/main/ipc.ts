@@ -40,6 +40,10 @@ export function registerIpc(
 ): void {
   const sourceEngine = createCachedEngine(sourceCacheDir)
 
+  function broadcast(channel: string, payload: unknown): void {
+    for (const win of BrowserWindow.getAllWindows()) win.webContents.send(channel, payload)
+  }
+
   async function readSources(): Promise<BookSource[]> {
     try { return JSON.parse(await readFile(sourcesFile, 'utf8')) } catch { return [] }
   }
@@ -187,6 +191,21 @@ export function registerIpc(
     const items = await library.addFiles([file])
     if (items[0] && book.title) await library.rename(items[0].meta.id, book.title)
     return items[0]
+  })
+  ipcMain.handle('web:toEpubBatch', async (_e, urls: string[]) => {
+    const list = urls.map((u) => u.trim()).filter(Boolean)
+    const results: import('../shared/book').LibraryItem[] = []
+    for (let i = 0; i < list.length; i++) {
+      broadcast('web:toepub-progress', { message: `正在转换 ${i + 1}/${list.length}`, percent: Math.round((i / list.length) * 100), current: i + 1, total: list.length })
+      const book = await convertWebToEpub(list[i])
+      const file = join(booksDir, `${randomUUID()}.epub`)
+      await writeFile(file, Buffer.from(buildEpub({ title: book.title, chapters: book.chapters })))
+      const items = await library.addFiles([file])
+      if (items[0] && book.title) await library.rename(items[0].meta.id, book.title)
+      results.push(items[0])
+    }
+    broadcast('web:toepub-progress', { message: '全部完成', percent: 100, current: list.length, total: list.length })
+    return results
   })
   ipcMain.handle('sources:list', () => readSources())
   ipcMain.handle('sources:importDialog', async () => {

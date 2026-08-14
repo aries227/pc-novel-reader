@@ -1,4 +1,5 @@
 import type { Quiz, QuizQuestion, VocabEntry } from '../../shared/ipc'
+import { hideLoading, showLoading } from './loading'
 
 const STATE_LABELS: Record<VocabEntry['reviewState'], string> = {
   new: '新词',
@@ -150,6 +151,7 @@ export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions
     const body = host.querySelector('.quiz-body') as HTMLElement
     body.textContent = '正在生成练习…（需在设置中配置练习用的 AI 供应商与 Key）'
     try {
+      showLoading('正在生成练习…')
       quiz = await window.reader.ai.quiz({
         ...opts,
         chapterIndex: opts.chapterIndex ?? 0,
@@ -161,6 +163,8 @@ export async function createQuizWidget(host: HTMLElement, opts: QuizModalOptions
       renderQuiz()
     } catch (err) {
       body.textContent = err instanceof Error ? err.message : '生成失败'
+    } finally {
+      hideLoading()
     }
   }
 

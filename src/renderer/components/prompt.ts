@@ -60,6 +60,37 @@ export function confirmModal(title: string, message: string): Promise<boolean> {
   })
 }
 
+export function promptTextModal(title: string, placeholder = ''): Promise<string | null> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div')
+    overlay.className = 'modal-overlay'
+    overlay.innerHTML = `
+      <div class="modal prompt-modal">
+        <h2>${esc(title)}</h2>
+        <textarea class="prompt-text" rows="6" placeholder="${esc(placeholder)}"></textarea>
+        <div class="modal-actions">
+          <button data-act="ok">确定</button>
+          <button data-act="cancel">取消</button>
+        </div>
+      </div>`
+    document.body.appendChild(overlay)
+    const input = overlay.querySelector('.prompt-text') as HTMLTextAreaElement
+    input.focus()
+    function done(value: string | null): void {
+      overlay.remove()
+      resolve(value)
+    }
+    overlay.querySelector('[data-act="ok"]')!.addEventListener('click', () => done(input.value))
+    overlay.querySelector('[data-act="cancel"]')!.addEventListener('click', () => done(null))
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') done(null)
+    })
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) done(null)
+    })
+  })
+}
+
 function esc(v: string): string {
   return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

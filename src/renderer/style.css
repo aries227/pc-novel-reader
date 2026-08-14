@@ -158,6 +158,8 @@ body[data-theme="paper"] { --bg: linear-gradient(160deg, #f7f1e3 0%, #efe3c8 100
 .float-body { flex: 1; overflow-y: auto; padding: 12px; min-height: 180px; }
 .dict-panel { top: 96px; }
 .quiz-panel { top: 128px; }
+.reader-page.page-turn { animation: readerPageIn .22s ease; }
+@keyframes readerPageIn { from { opacity: .45; transform: translateX(10px); } to { opacity: 1; transform: none; } }
 .switch-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; }
 .exam-colors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0; }
 .exam-color-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; }

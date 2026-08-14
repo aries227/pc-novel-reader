@@ -216,6 +216,12 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     pageEl.scrollLeft = page * step
   }
 
+  function playPageTurn(): void {
+    pageEl.classList.remove('page-turn')
+    void pageEl.offsetWidth
+    pageEl.classList.add('page-turn')
+  }
+
   function applyTheme(s: Settings): void {
     applySettingsToBody(s)
     pageEl.style.fontSize = `${s.fontSize}px`
@@ -241,6 +247,7 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
       })
     })
     pageEl.dataset.mode = settings.mode
+    playPageTurn()
     applyPagedLayout()
     pageEl.scrollLeft = 0
     pageEl.scrollTop = 0
@@ -456,48 +463,54 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   })
 
   function onKey(e: KeyboardEvent): void {
-    if (e.key === 'Escape') { onBack(); return }
+    const nextKeys = keysOf(settings.shortcuts?.next ?? 'ArrowRight,PageDown,space')
+    const prevKeys = keysOf(settings.shortcuts?.prev ?? 'ArrowLeft,PageUp')
+    const backKeys = keysOf(settings.shortcuts?.back ?? 'Escape')
+    if (backKeys.includes(e.key)) { onBack(); return }
     if (pdf) {
-      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      if (nextKeys.includes(e.key)) {
         e.preventDefault(); pdf.next()
-      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      } else if (prevKeys.includes(e.key)) {
         e.preventDefault(); pdf.prev()
       }
       return
     }
     if (settings.mode === 'paged') {
-      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      if (nextKeys.includes(e.key)) {
         e.preventDefault()
         if (canNext(pageEl)) nextPage(pageEl)
         else if (chapterIndex < chapters.length - 1) { chapterIndex++; renderChapter() }
-      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      } else if (prevKeys.includes(e.key)) {
         e.preventDefault()
         if (pageEl.scrollLeft > 0) prevPage(pageEl)
         else if (chapterIndex > 0) { chapterIndex--; renderChapter() }
       }
     } else if (settings.mode === 'vertical') {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      if (nextKeys.includes(e.key)) {
         e.preventDefault()
         if (canNextVertical(pageEl)) nextVerticalPage(pageEl)
         else if (chapterIndex < chapters.length - 1) { chapterIndex++; renderChapter() }
-      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      } else if (prevKeys.includes(e.key)) {
         e.preventDefault()
         if (canPrevVertical(pageEl)) prevVerticalPage(pageEl)
         else if (chapterIndex > 0) { chapterIndex--; renderChapter() }
       }
     } else if (settings.mode === 'hscroll') {
-      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      if (nextKeys.includes(e.key)) {
         e.preventDefault()
         if (canNext(pageEl)) scrollHByWheel(pageEl, pageEl.clientWidth * 0.8)
         else if (chapterIndex < chapters.length - 1) { chapterIndex++; renderChapter() }
-      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      } else if (prevKeys.includes(e.key)) {
         e.preventDefault()
         if (pageEl.scrollLeft > 0) scrollHByWheel(pageEl, -pageEl.clientWidth * 0.8)
         else if (chapterIndex > 0) { chapterIndex--; renderChapter() }
       }
-    } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+    } else if (nextKeys.includes(e.key)) {
       e.preventDefault()
       pageEl.scrollBy({ top: pageEl.clientHeight * 0.8 })
+    } else if (prevKeys.includes(e.key)) {
+      e.preventDefault()
+      pageEl.scrollBy({ top: -pageEl.clientHeight * 0.8 })
     }
   }
   document.addEventListener('keydown', onKey)
@@ -539,6 +552,10 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
 
 function esc(v: string): string {
   return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function keysOf(v: string): string[] {
+  return v.split(',').map((k) => k.trim() === 'space' ? ' ' : k.trim()).filter(Boolean)
 }
 
 function tagLabel(tag: string): string {

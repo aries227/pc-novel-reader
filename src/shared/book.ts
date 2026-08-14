@@ -73,6 +73,12 @@ export interface ExamColorSettings {
   colors: Record<string, string>
 }
 
+export interface ShortcutSettings {
+  next: string
+  prev: string
+  back: string
+}
+
 export interface Settings {
   theme: 'light' | 'sepia' | 'dark' | 'green' | 'sunset' | 'ocean' | 'forest' | 'paper'
   fontSize: number
@@ -93,6 +99,7 @@ export interface Settings {
   aiProviders: AiProvider[]
   aiDefaults: AiDefaults
   examColors: ExamColorSettings
+  shortcuts: ShortcutSettings
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -131,7 +138,8 @@ export const DEFAULT_SETTINGS: Settings = {
       toefl: '#c2185b',
       gre: '#b71c1c'
     }
-  }
+  },
+  shortcuts: { next: 'ArrowRight,PageDown,space', prev: 'ArrowLeft,PageUp', back: 'Escape' }
 }
 
 export function ensureAiSettings(s: Settings): Settings {

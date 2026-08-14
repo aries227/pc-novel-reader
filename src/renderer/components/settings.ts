@@ -37,6 +37,11 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
       <h3>阅读着色</h3>
       <label class="switch-row"><input type="checkbox" data-exam="enabled" /> 考试词自动着色（四六级/考研/托福/雅思/GRE 等）</label>
       <div class="exam-colors" data-exam-colors></div>
+      <hr />
+      <h3>快捷键</h3>
+      <label>下一页 <input data-shortcut="next" placeholder="多个用逗号分隔，空格写 space" /></label>
+      <label>上一页 <input data-shortcut="prev" placeholder="多个用逗号分隔，如 ArrowLeft, PageUp" /></label>
+      <label>返回书架 <input data-shortcut="back" placeholder="如 Escape" /></label>
       <label>上传端口 <select data-set="uploadPortMode"><option value="random">随机</option><option value="fixed">固定</option></select></label>
       <label>上传上限(MB) <input type="number" data-set="maxUploadMb" min="1" max="1024" /></label>
       <div class="update-row">
@@ -166,6 +171,21 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
     const cur = await window.reader.settings.get()
     const next = await window.reader.settings.set({ examColors: { ...cur.examColors, enabled: (e.target as HTMLInputElement).checked } })
     renderExamColors(next)
+  })
+
+  function renderShortcuts(next: Settings): void {
+    ;(overlay.querySelector('[data-shortcut="next"]') as HTMLInputElement).value = next.shortcuts.next
+    ;(overlay.querySelector('[data-shortcut="prev"]') as HTMLInputElement).value = next.shortcuts.prev
+    ;(overlay.querySelector('[data-shortcut="back"]') as HTMLInputElement).value = next.shortcuts.back
+  }
+
+  overlay.querySelectorAll('[data-shortcut]').forEach((el) => {
+    el.addEventListener('change', async () => {
+      const cur = await window.reader.settings.get()
+      const key = (el as HTMLElement).dataset.shortcut as 'next' | 'prev' | 'back'
+      const next = await window.reader.settings.set({ shortcuts: { ...cur.shortcuts, [key]: (el as HTMLInputElement).value.trim() } })
+      renderShortcuts(next)
+    })
   })
 
   function wireProviderCards(): void {
@@ -320,6 +340,7 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
 
   renderAi(s)
   renderExamColors(s)
+  renderShortcuts(s)
 }
 
 function escapeHtml(v: string): string {

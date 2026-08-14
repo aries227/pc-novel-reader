@@ -27,7 +27,7 @@ function baseMock(): ReaderApi {
       removeHighlight: async () => undefined
     },
     settings: {
-      get: async () => ({ theme: 'sepia', fontSize: 18, lineHeight: 1.9, fontFamily: 'system', backgroundOpacity: 0.8, mode: 'paged', uploadPortMode: 'random', maxUploadMb: 100, sourceCacheLimit: 50, translateBaseUrl: 'https://api.deepseek.com', translateModel: 'deepseek-chat', translateTarget: '英文', aiProviders: [{ id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', apiKey: '', models: ['deepseek-chat'] }], aiDefaults: { translateProviderId: 'deepseek', translateModel: 'deepseek-chat', quizProviderId: 'deepseek', quizModel: 'deepseek-chat', quizCount: 4, quizDifficulty: '通用' }, examColors: { enabled: true, colors: {} } }),
+      get: async () => ({ theme: 'sepia', fontSize: 18, lineHeight: 1.9, fontFamily: 'system', backgroundOpacity: 0.8, mode: 'paged', uploadPortMode: 'random', maxUploadMb: 100, sourceCacheLimit: 50, translateBaseUrl: 'https://api.deepseek.com', translateModel: 'deepseek-chat', translateTarget: '英文', aiProviders: [{ id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', apiKey: '', models: ['deepseek-chat'] }], aiDefaults: { translateProviderId: 'deepseek', translateModel: 'deepseek-chat', quizProviderId: 'deepseek', quizModel: 'deepseek-chat', quizCount: 4, quizDifficulty: '通用' }, examColors: { enabled: true, colors: {} }, shortcuts: { next: 'ArrowRight,PageDown,space', prev: 'ArrowLeft,PageUp', back: 'Escape' } }),
       set: async (patch) => ({ ...(await baseMock().settings.get()), ...patch }),
       uploadBackground: async () => baseMock().settings.get(),
       clearBackground: async () => baseMock().settings.get(),

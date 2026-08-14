@@ -18,7 +18,7 @@ const settings = {
   translateModel: 'deepseek-chat',
   translateTarget: '英文',
   aiProviders: [{ id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', apiKey: '', models: ['deepseek-chat'] }],
-  aiDefaults: { translateProviderId: 'deepseek', translateModel: 'deepseek-chat', quizProviderId: 'deepseek', quizModel: 'deepseek-chat', quizCount: 4, quizDifficulty: '通用' }, examColors: { enabled: true, colors: {} }
+  aiDefaults: { translateProviderId: 'deepseek', translateModel: 'deepseek-chat', quizProviderId: 'deepseek', quizModel: 'deepseek-chat', quizCount: 4, quizDifficulty: '通用' }, examColors: { enabled: true, colors: {} }, shortcuts: { next: 'ArrowRight,PageDown,space', prev: 'ArrowLeft,PageUp', back: 'Escape' }
 }
 
 function mockReader(): void {
@@ -123,6 +123,7 @@ describe('renderReader', () => {
     expect(container.querySelector('.reader-title')?.textContent).toContain('第一章')
     expect(container.querySelector('.reader-page')?.textContent).toContain('正文')
     expect(container.querySelector('.reader-page')?.querySelector('script')).toBeNull()
+    expect(container.querySelector('.reader-page')?.classList.contains('page-turn')).toBe(true)
     expect(container.querySelector('[data-act="toc"]')?.textContent).toContain('目录')
     expect(container.querySelector('[data-act="translate"]')?.textContent).toContain('翻译')
     expect(container.querySelector('[data-act="quiz"]')?.textContent).toContain('练习')
@@ -163,5 +164,17 @@ describe('renderReader', () => {
     const panel = container.querySelector('.tl-panel') as HTMLElement
     expect(panel.style.left).toBe('50px')
     expect(panel.style.top).toBe('20px')
+  })
+  it('支持自定义返回快捷键', async () => {
+    mockReader()
+    ;(window.reader.settings as { get: typeof window.reader.settings.get }).get = async () => ({
+      ...settings,
+      shortcuts: { next: 'ArrowRight,PageDown,space', prev: 'ArrowLeft,PageUp', back: 'q' }
+    })
+    let back = false
+    const container = document.createElement('div')
+    await renderReader(container, 'b1', () => { back = true })
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'q' }))
+    expect(back).toBe(true)
   })
 })

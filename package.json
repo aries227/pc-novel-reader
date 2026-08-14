@@ -1,7 +1,7 @@
 {
   "name": "pc-novel-reader",
   "productName": "简阅",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "private": true,
   "description": "简洁高效的 PC 端小说阅读器",
   "author": "Codex",

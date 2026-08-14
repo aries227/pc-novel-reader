@@ -1,4 +1,4 @@
-import type { Bookmark, Chapter, LibraryItem, Progress, Settings } from './book'
+import type { AiProvider, Bookmark, Chapter, LibraryItem, Progress, Settings } from './book'
 import type { BookSource, SourceChapter, SourceSearchResult } from './source'
 
 export interface UploadStatus {
@@ -12,6 +12,13 @@ export interface BookOpenResult {
   meta: import('./book').BookMeta
   chapters: Chapter[]
   pdfUrl?: string
+}
+
+export interface AiChatRequest {
+  providerId?: string
+  model?: string
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
+  jsonMode?: boolean
 }
 
 export interface ReaderApi {
@@ -41,6 +48,11 @@ export interface ReaderApi {
   }
   translate: {
     translate(text: string): Promise<string>
+  }
+  ai: {
+    test(provider: AiProvider): Promise<{ ok: boolean; message: string; models: string[] }>
+    fetchModels(provider: AiProvider): Promise<string[]>
+    chat(req: AiChatRequest): Promise<string>
   }
   upload: {
     status(): Promise<UploadStatus>

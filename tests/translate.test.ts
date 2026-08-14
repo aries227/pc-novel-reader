@@ -10,7 +10,7 @@ beforeAll(async () => {
     let body = ''
     req.on('data', (c) => { body += c })
     req.on('end', () => {
-      if (req.method !== 'POST' || req.url !== '/chat/completions') {
+      if (req.method !== 'POST' || req.url !== '/v1/chat/completions') {
         res.statusCode = 404
         res.end()
         return

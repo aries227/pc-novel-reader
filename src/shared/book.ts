@@ -39,6 +39,21 @@ export interface Bookmark {
 
 export interface LibraryItem { meta: BookMeta; progress?: Progress; bookmarks: Bookmark[] }
 
+export interface AiProvider {
+  id: string
+  name: string
+  baseUrl: string
+  apiKey?: string
+  models: string[]
+}
+
+export interface AiDefaults {
+  translateProviderId: string
+  translateModel: string
+  quizProviderId: string
+  quizModel: string
+}
+
 export interface Settings {
   theme: 'light' | 'sepia' | 'dark' | 'green'
   fontSize: number
@@ -56,6 +71,8 @@ export interface Settings {
   translateBaseUrl: string
   translateModel: string
   translateTarget: string
+  aiProviders: AiProvider[]
+  aiDefaults: AiDefaults
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -70,7 +87,56 @@ export const DEFAULT_SETTINGS: Settings = {
   sourceCacheLimit: 50,
   translateBaseUrl: 'https://api.deepseek.com',
   translateModel: 'deepseek-chat',
-  translateTarget: '英文'
+  translateTarget: '英文',
+  aiProviders: [
+    { id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', apiKey: '', models: ['deepseek-chat'] }
+  ],
+  aiDefaults: {
+    translateProviderId: 'deepseek',
+    translateModel: 'deepseek-chat',
+    quizProviderId: 'deepseek',
+    quizModel: 'deepseek-chat'
+  }
+}
+
+export function ensureAiSettings(s: Settings): Settings {
+  const providers = s.aiProviders?.length ? [...s.aiProviders] : []
+  if (providers.length === 0) {
+    providers.push({
+      id: s.translateApiKey ? 'legacy' : 'deepseek',
+      name: 'DeepSeek',
+      baseUrl: s.translateBaseUrl || 'https://api.deepseek.com',
+      apiKey: s.translateApiKey ?? '',
+      models: [s.translateModel || 'deepseek-chat']
+    })
+  } else if (s.translateApiKey && !providers.some((p) => p.apiKey === s.translateApiKey)) {
+    const first = { ...providers[0], apiKey: s.translateApiKey, baseUrl: s.translateBaseUrl || providers[0].baseUrl }
+    if (s.translateModel && !first.models.includes(s.translateModel)) first.models = [s.translateModel, ...first.models]
+    providers[0] = first
+  }
+  const def: AiDefaults = {
+    translateProviderId: s.aiDefaults?.translateProviderId ?? '',
+    translateModel: s.aiDefaults?.translateModel ?? '',
+    quizProviderId: s.aiDefaults?.quizProviderId ?? '',
+    quizModel: s.aiDefaults?.quizModel ?? ''
+  }
+  const first = providers[0]
+  const pick = (id: string, model: string): { id: string; model: string } => {
+    const ok = providers.some((p) => p.id === id)
+    return { id: ok ? id : first.id, model: model || first.models[0] || '' }
+  }
+  const t = pick(def.translateProviderId, def.translateModel)
+  const q = pick(def.quizProviderId, def.quizModel)
+  return {
+    ...s,
+    aiProviders: providers,
+    aiDefaults: {
+      translateProviderId: t.id,
+      translateModel: t.model,
+      quizProviderId: q.id,
+      quizModel: q.model
+    }
+  }
 }
 
 export const SUPPORTED_EXTENSIONS = ['txt', 'epub', 'mobi', 'azw3', 'fb2', 'pdf', 'html', 'htm', 'docx'] as const

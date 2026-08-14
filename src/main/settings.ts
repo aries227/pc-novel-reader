@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Settings } from '../shared/book'
-import { DEFAULT_SETTINGS } from '../shared/book'
+import { DEFAULT_SETTINGS, ensureAiSettings } from '../shared/book'
 
 export class SettingsStore {
   private settings: Settings = { ...DEFAULT_SETTINGS }
@@ -14,9 +14,9 @@ export class SettingsStore {
 
   async get(): Promise<Settings> {
     try {
-      this.settings = { ...DEFAULT_SETTINGS, ...(JSON.parse(await readFile(this.file, 'utf8')) as Partial<Settings>) }
+      this.settings = ensureAiSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(await readFile(this.file, 'utf8')) as Partial<Settings>) })
     } catch {
-      this.settings = { ...DEFAULT_SETTINGS }
+      this.settings = ensureAiSettings({ ...DEFAULT_SETTINGS })
     }
     return this.settings
   }

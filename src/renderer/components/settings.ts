@@ -1,3 +1,4 @@
+import type { AiProvider, Settings } from '../../shared/book'
 import { applySettingsToBody } from '../theme'
 
 export async function openSettingsModal(container: HTMLElement): Promise<void> {
@@ -5,7 +6,7 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
   const overlay = document.createElement('div')
   overlay.className = 'modal-overlay'
   overlay.innerHTML = `
-    <div class="modal">
+    <div class="modal modal-wide">
       <h2>设置</h2>
       <label>主题 <select data-set="theme"><option value="light">白</option><option value="sepia">米黄</option><option value="dark">夜间</option><option value="green">护眼绿</option></select></label>
       <label>默认字号 <input type="number" data-set="fontSize" min="12" max="32" /></label>
@@ -18,10 +19,17 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
         <button data-act="clear-font">清除字体</button>
       </div>
       <hr />
-      <label>DeepSeek API Key <input type="password" data-set="translateApiKey" placeholder="sk-..." /></label>
-      <label>翻译目标 <select data-set="translateTarget"><option>中文</option><option>英文</option><option>日文</option><option>韩文</option></select></label>
-      <label>接口地址 <input data-set="translateBaseUrl" /></label>
-      <label>模型 <input data-set="translateModel" /></label>
+      <h3>AI 服务</h3>
+      <p class="hint">支持任意 OpenAI 兼容接口：填写接口地址、API Key 与可用模型即可，可同时配置多家供应商。</p>
+      <div class="ai-providers" data-ai-providers></div>
+      <button data-act="add-provider">+ 添加供应商</button>
+      <div class="ai-defaults">
+        <label>翻译默认供应商 <select data-ai-default="translateProvider"></select></label>
+        <label>翻译默认模型 <input data-ai-default="translateModel" placeholder="如 deepseek-chat" /></label>
+        <label>练习默认供应商 <select data-ai-default="quizProvider"></select></label>
+        <label>练习默认模型 <input data-ai-default="quizModel" placeholder="如 deepseek-chat" /></label>
+        <label>翻译目标 <select data-set="translateTarget"><option>中文</option><option>英文</option><option>日文</option><option>韩文</option></select></label>
+      </div>
       <label>上传端口 <select data-set="uploadPortMode"><option value="random">随机</option><option value="fixed">固定</option></select></label>
       <label>上传上限(MB) <input type="number" data-set="maxUploadMb" min="1" max="1024" /></label>
       <div class="update-row">
@@ -31,6 +39,157 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
       <button data-act="close">关闭</button>
     </div>`
   container.appendChild(overlay)
+
+  function providerCard(p: AiProvider): HTMLElement {
+    const card = document.createElement('div')
+    card.className = 'ai-provider'
+    card.dataset.providerId = p.id
+    card.innerHTML = `
+      <div class="ai-provider-head">
+        <input data-provider-input="name" placeholder="名称（如 DeepSeek / OpenAI / 硅基流动）" value="${escapeHtml(p.name)}" />
+        <button data-provider-act="remove" title="删除该供应商">×</button>
+      </div>
+      <input data-provider-input="baseUrl" placeholder="接口地址，如 https://api.deepseek.com" value="${escapeHtml(p.baseUrl)}" />
+      <input data-provider-input="apiKey" type="password" placeholder="API Key" value="${escapeHtml(p.apiKey ?? '')}" />
+      <input data-provider-input="models" placeholder="模型（逗号分隔），如 deepseek-chat, deepseek-reasoner" value="${escapeHtml(p.models.join(', '))}" />
+      <div class="ai-provider-actions">
+        <button data-provider-act="test">测试连接</button>
+        <button data-provider-act="fetch">获取模型</button>
+        <span class="ai-provider-status"></span>
+      </div>`
+    return card
+  }
+
+  function collectProviders(): AiProvider[] {
+    return [...overlay.querySelectorAll<HTMLElement>('.ai-provider')].map((card) => ({
+      id: card.dataset.providerId!,
+      name: (card.querySelector('[data-provider-input="name"]') as HTMLInputElement).value.trim() || '未命名',
+      baseUrl: (card.querySelector('[data-provider-input="baseUrl"]') as HTMLInputElement).value.trim(),
+      apiKey: (card.querySelector('[data-provider-input="apiKey"]') as HTMLInputElement).value.trim(),
+      models: (card.querySelector('[data-provider-input="models"]') as HTMLInputElement).value
+        .split(/[,，]/)
+        .map((m) => m.trim())
+        .filter(Boolean)
+    }))
+  }
+
+  async function persistProviders(): Promise<Settings> {
+    const next = await window.reader.settings.set({ aiProviders: collectProviders() })
+    renderAi(next)
+    return next
+  }
+
+  function fillDefaultSelect(sel: HTMLSelectElement, providers: AiProvider[], currentId: string): void {
+    sel.innerHTML = ''
+    providers.forEach((p) => {
+      const opt = document.createElement('option')
+      opt.value = p.id
+      opt.textContent = p.name
+      opt.selected = p.id === currentId
+      sel.appendChild(opt)
+    })
+  }
+
+  function renderAi(next: Settings): void {
+    const box = overlay.querySelector('[data-ai-providers]') as HTMLElement
+    box.innerHTML = ''
+    next.aiProviders.forEach((p) => box.appendChild(providerCard(p)))
+    const tSel = overlay.querySelector('[data-ai-default="translateProvider"]') as HTMLSelectElement
+    const qSel = overlay.querySelector('[data-ai-default="quizProvider"]') as HTMLSelectElement
+    fillDefaultSelect(tSel, next.aiProviders, next.aiDefaults.translateProviderId)
+    fillDefaultSelect(qSel, next.aiProviders, next.aiDefaults.quizProviderId)
+    ;(overlay.querySelector('[data-ai-default="translateModel"]') as HTMLInputElement).value = next.aiDefaults.translateModel
+    ;(overlay.querySelector('[data-ai-default="quizModel"]') as HTMLInputElement).value = next.aiDefaults.quizModel
+    wireProviderCards()
+  }
+
+  function wireProviderCards(): void {
+    overlay.querySelectorAll<HTMLElement>('.ai-provider').forEach((card) => {
+      card.querySelectorAll<HTMLElement>('[data-provider-input]').forEach((el) => {
+        el.addEventListener('change', () => {
+          void persistProviders()
+        })
+      })
+      card.querySelector('[data-provider-act="remove"]')!.addEventListener('click', () => {
+        card.remove()
+        void persistProviders()
+      })
+      card.querySelector('[data-provider-act="test"]')!.addEventListener('click', () => {
+        void runProviderAction(card, 'test')
+      })
+      card.querySelector('[data-provider-act="fetch"]')!.addEventListener('click', () => {
+        void runProviderAction(card, 'fetch')
+      })
+    })
+  }
+
+  async function runProviderAction(card: HTMLElement, act: 'test' | 'fetch'): Promise<void> {
+    const provider = collectProviders().find((p) => p.id === card.dataset.providerId)!
+    const status = card.querySelector('.ai-provider-status') as HTMLElement
+    status.textContent = act === 'test' ? '测试中…' : '获取中…'
+    try {
+      if (act === 'test') {
+        const r = await window.reader.ai.test(provider)
+        status.textContent = r.ok ? `连接成功，共 ${r.models.length} 个模型` : r.message
+      } else {
+        const models = await window.reader.ai.fetchModels(provider)
+        ;(card.querySelector('[data-provider-input="models"]') as HTMLInputElement).value = models.join(', ')
+        await persistProviders()
+        status.textContent = `已获取 ${models.length} 个模型`
+      }
+    } catch (err) {
+      status.textContent = err instanceof Error ? err.message : '操作失败'
+    }
+  }
+
+  overlay.querySelector('[data-act="add-provider"]')!.addEventListener('click', () => {
+    const id = `p_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const box = overlay.querySelector('[data-ai-providers]') as HTMLElement
+    box.appendChild(providerCard({ id, name: '新供应商', baseUrl: 'https://api.deepseek.com', apiKey: '', models: ['deepseek-chat'] }))
+    wireProviderCards()
+    void persistProviders()
+  })
+
+  overlay.querySelector('[data-ai-default="translateProvider"]')!.addEventListener('change', async (e) => {
+    const sel = e.target as HTMLSelectElement
+    const provider = collectProviders().find((p) => p.id === sel.value)
+    const next = await window.reader.settings.set({
+      aiDefaults: {
+        ...(await window.reader.settings.get()).aiDefaults,
+        translateProviderId: sel.value,
+        translateModel: provider?.models[0] ?? ''
+      }
+    })
+    renderAi(next)
+  })
+
+  overlay.querySelector('[data-ai-default="quizProvider"]')!.addEventListener('change', async (e) => {
+    const sel = e.target as HTMLSelectElement
+    const provider = collectProviders().find((p) => p.id === sel.value)
+    const next = await window.reader.settings.set({
+      aiDefaults: {
+        ...(await window.reader.settings.get()).aiDefaults,
+        quizProviderId: sel.value,
+        quizModel: provider?.models[0] ?? ''
+      }
+    })
+    renderAi(next)
+  })
+
+  overlay.querySelector('[data-ai-default="translateModel"]')!.addEventListener('change', async (e) => {
+    const next = await window.reader.settings.set({
+      aiDefaults: { ...(await window.reader.settings.get()).aiDefaults, translateModel: (e.target as HTMLInputElement).value.trim() }
+    })
+    renderAi(next)
+  })
+
+  overlay.querySelector('[data-ai-default="quizModel"]')!.addEventListener('change', async (e) => {
+    const next = await window.reader.settings.set({
+      aiDefaults: { ...(await window.reader.settings.get()).aiDefaults, quizModel: (e.target as HTMLInputElement).value.trim() }
+    })
+    renderAi(next)
+  })
+
   overlay.querySelectorAll('[data-set]').forEach((el) => {
     const key = (el as HTMLElement).dataset.set!
     ;(el as HTMLInputElement).value = String((s as unknown as Record<string, unknown>)[key])
@@ -41,6 +200,7 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
       applySettingsToBody(next)
     })
   })
+
   overlay.querySelector('[data-act="upload-bg"]')!.addEventListener('click', async () => {
     applySettingsToBody(await window.reader.settings.uploadBackground())
   })
@@ -53,6 +213,7 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
   overlay.querySelector('[data-act="clear-font"]')!.addEventListener('click', async () => {
     applySettingsToBody(await window.reader.settings.clearFont())
   })
+
   const statusEl = overlay.querySelector('.update-status') as HTMLElement
   const unsub = window.reader.update.onStatus((status) => {
     if (status.phase === 'checking') statusEl.textContent = '正在检查更新…'
@@ -69,4 +230,10 @@ export async function openSettingsModal(container: HTMLElement): Promise<void> {
     unsub()
     overlay.remove()
   })
+
+  renderAi(s)
+}
+
+function escapeHtml(v: string): string {
+  return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

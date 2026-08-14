@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ReaderApi } from '../shared/ipc'
+import type { AiChatRequest, ReaderApi } from '../shared/ipc'
 
 const api: ReaderApi = {
   library: {
@@ -27,6 +27,11 @@ const api: ReaderApi = {
     clearFont: () => ipcRenderer.invoke('settings:clearFont')
   },
   translate: { translate: (text) => ipcRenderer.invoke('translate:translate', text) },
+  ai: {
+    test: (provider) => ipcRenderer.invoke('ai:test', provider),
+    fetchModels: (provider) => ipcRenderer.invoke('ai:fetchModels', provider),
+    chat: (req: AiChatRequest) => ipcRenderer.invoke('ai:chat', req)
+  },
   upload: {
     status: () => ipcRenderer.invoke('upload:status'),
     start: () => ipcRenderer.invoke('upload:start'),

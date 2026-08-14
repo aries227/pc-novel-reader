@@ -2,7 +2,9 @@ import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Chapter, Progress, Settings } from '../shared/book'
+import type { AiProvider, Chapter, Progress, Settings } from '../shared/book'
+import type { AiChatRequest } from '../shared/ipc'
+import { chatCompletion, fetchModels, resolveAiProvider, testProvider } from './ai'
 import type { BookSource } from '../shared/source'
 import { LibraryStore } from './library'
 import { pickBackgroundImage, pickFontFile } from './assets'
@@ -93,13 +95,24 @@ export function registerIpc(
   ipcMain.handle('settings:clearFont', () => settings.set({ customFont: undefined }))
   ipcMain.handle('translate:translate', async (_e, text: string) => {
     const s = await settings.get()
-    if (!s.translateApiKey) throw new Error('请先在设置中填写 DeepSeek API Key')
-    return translateText({
-      text,
-      target: s.translateTarget,
-      apiKey: s.translateApiKey,
-      baseUrl: s.translateBaseUrl,
-      model: s.translateModel
+    const { provider, model } = resolveAiProvider(s, 'translate')
+    if (!provider.apiKey?.trim()) throw new Error('请先在设置中填写 API Key')
+    return translateText({ text, target: s.translateTarget, apiKey: provider.apiKey, baseUrl: provider.baseUrl, model })
+  })
+  ipcMain.handle('ai:test', (_e, provider: AiProvider) => testProvider(provider))
+  ipcMain.handle('ai:fetchModels', (_e, provider: AiProvider) => fetchModels(provider))
+  ipcMain.handle('ai:chat', async (_e, req: AiChatRequest) => {
+    const s = await settings.get()
+    const fallback = resolveAiProvider(s, 'quiz')
+    const provider = s.aiProviders.find((p) => p.id === req.providerId) ?? fallback.provider
+    if (!provider) throw new Error('请先在设置中配置 AI 供应商')
+    if (!provider.apiKey?.trim()) throw new Error('请先在设置中填写 API Key')
+    return chatCompletion({
+      baseUrl: provider.baseUrl,
+      apiKey: provider.apiKey,
+      model: req.model || fallback.model || provider.models[0] || '',
+      messages: req.messages,
+      jsonMode: req.jsonMode
     })
   })
   ipcMain.handle('upload:status', () => uploadManager.status())

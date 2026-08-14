@@ -16,7 +16,9 @@ const settings = {
   sourceCacheLimit: 50,
   translateBaseUrl: 'https://api.deepseek.com',
   translateModel: 'deepseek-chat',
-  translateTarget: '英文'
+  translateTarget: '英文',
+  aiProviders: [{ id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', apiKey: '', models: ['deepseek-chat'] }],
+  aiDefaults: { translateProviderId: 'deepseek', translateModel: 'deepseek-chat', quizProviderId: 'deepseek', quizModel: 'deepseek-chat' }
 }
 
 function mockReader(): void {
@@ -52,6 +54,11 @@ function mockReader(): void {
       clearFont: async () => settings
     },
     translate: { translate: async (t: string) => `译文:${t}` },
+    ai: {
+      test: async () => ({ ok: true, message: '连接成功', models: ['m1'] }),
+      fetchModels: async () => ['m1'],
+      chat: async () => ''
+    },
     upload: {
       status: async () => ({ running: false }),
       start: async () => ({ running: false }),

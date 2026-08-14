@@ -20,16 +20,41 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
   container.innerHTML = `
     <div class="reader-root">
       <header class="reader-toolbar">
-        <button data-act="back">← 书架</button>
+        <button data-act="back" class="tool-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          书架
+        </button>
         <span class="reader-title"></span>
-        <span class="reader-spacer"></span>
-        <button data-act="toc">目录</button>
-        <button data-act="bookmark">书签</button>
-        <button data-act="vocab">生词本</button>
-        <button data-act="quiz">练习</button>
-        <button data-act="translate">翻译</button>
-        <button data-act="settings">设置</button>
-        <button data-act="upload">扫码上传</button>
+        <nav class="toolbar-actions">
+          <button data-act="toc" class="tool-btn" title="章节目录">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+            目录
+          </button>
+          <button data-act="bookmark" class="tool-btn" title="添加书签">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
+            书签
+          </button>
+          <button data-act="vocab" class="tool-btn" title="生词本">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+            生词
+          </button>
+          <button data-act="quiz" class="tool-btn" title="本章练习">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+            练习
+          </button>
+          <button data-act="translate" class="tool-btn" title="翻译">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+            翻译
+          </button>
+          <button data-act="settings" class="tool-btn" title="阅读设置">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></svg>
+            设置
+          </button>
+          <button data-act="upload" class="tool-btn" title="扫码上传">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
+            上传
+          </button>
+        </nav>
       </header>
       <div class="reader-body">
         <aside class="reader-toc hidden"><ul class="toc-list"></ul></aside>

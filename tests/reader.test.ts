@@ -122,6 +122,9 @@ describe('renderReader', () => {
     expect(container.querySelector('.reader-title')?.textContent).toContain('第一章')
     expect(container.querySelector('.reader-page')?.textContent).toContain('正文')
     expect(container.querySelector('.reader-page')?.querySelector('script')).toBeNull()
+    expect(container.querySelector('[data-act="toc"]')?.textContent).toContain('目录')
+    expect(container.querySelector('[data-act="translate"]')?.textContent).toContain('翻译')
+    expect(container.querySelector('[data-act="quiz"]')?.textContent).toContain('练习')
     expect(window.reader.book.saveProgress).toHaveBeenCalled()
   })
   it('右侧面板可通过拖拽调整宽度', async () => {

@@ -15,7 +15,6 @@
     "dist": "npm run build && electron-builder --win nsis portable"
   },
   "dependencies": {
-    "@capacitor-community/http": "^1.4.1",
     "@capacitor/core": "^8.5.0",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/share": "^8.0.1",

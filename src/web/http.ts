@@ -7,8 +7,8 @@ export interface HttpOptions {
 export async function httpText(url: string, opts: HttpOptions = {}): Promise<string> {
   const { Capacitor } = await import('@capacitor/core')
   if (Capacitor.isNativePlatform()) {
-    const { Http } = await import('@capacitor-community/http')
-    const res = await Http.request({
+    const { CapacitorHttp } = await import('@capacitor/core')
+    const res = await CapacitorHttp.request({
       url,
       method: opts.method ?? 'GET',
       headers: opts.headers ?? {},

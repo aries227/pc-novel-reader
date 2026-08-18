@@ -5,7 +5,8 @@ export function applySettingsToBody(s: Settings): void {
   document.body.dataset.theme = s.theme
   const root = document.documentElement
   if (s.backgroundImage) {
-    root.style.setProperty('--reader-bg-image', `url("${toReaderFileUrl(s.backgroundImage)}")`)
+    const bg = s.backgroundImage.startsWith('data:') ? s.backgroundImage : toReaderFileUrl(s.backgroundImage)
+    root.style.setProperty('--reader-bg-image', `url("${bg}")`)
     root.style.setProperty('--reader-bg-opacity', String(s.backgroundOpacity ?? 0.8))
   } else {
     root.style.removeProperty('--reader-bg-image')
@@ -13,7 +14,8 @@ export function applySettingsToBody(s: Settings): void {
 
   const existing = document.getElementById('custom-reader-font') as HTMLStyleElement | null
   if (s.customFont) {
-    const css = `@font-face{font-family:'CustomReaderFont';src:url("${toReaderFileUrl(s.customFont)}");font-display:swap;}`
+    const font = s.customFont.startsWith('data:') ? s.customFont : toReaderFileUrl(s.customFont)
+    const css = `@font-face{font-family:'CustomReaderFont';src:url("${font}");font-display:swap;}`
     if (existing) {
       existing.textContent = css
     } else {

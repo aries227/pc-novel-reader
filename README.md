@@ -95,6 +95,25 @@ netsh advfirewall firewall add rule name="jian-yue-upload" dir=in action=allow p
 
 翻译用法：阅读页点击工具栏「翻译」按钮——选中了文字就翻译选中片段，否则翻译当前整章；译文显示在右下角面板。
 
+## 安卓版（0.7.0 起）
+
+安卓版基于 Capacitor 复用同一套阅读界面与数据模型：
+
+- 已支持：书架与进度、TXT / EPUB / MOBI / AZW3 / FB2 / DOCX / HTML / PDF 阅读、离线词典与考试词着色、生词本、高亮、主题与设置、AI 翻译 / 练习、WebToEpub 批量导入、书架搜索、用户词典导入。
+- 暂不支持：扫码上传与自动更新（桌面端专属）；书源在线搜索 / 在线阅读暂未接入，请用「网页转EPUB」导入。
+
+构建安卓 APK（需要 Android Studio / JDK 17+ / Android SDK）：
+
+```bash
+npm install
+npm run build
+npx cap sync android
+cd android
+./gradlew assembleDebug
+```
+
+产物在 `android/app/build/outputs/apk/debug/`。
+
 ## 学习功能
 
 ### 查词与生词本

@@ -1,7 +1,7 @@
 {
   "name": "pc-novel-reader",
   "productName": "简阅",
-  "version": "0.6.12",
+  "version": "0.7.0",
   "private": true,
   "description": "简洁高效的 PC 端小说阅读器",
   "author": "Codex",
@@ -15,22 +15,31 @@
     "dist": "npm run build && electron-builder --win nsis portable"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/http": "^0.0.2",
+    "@capacitor/share": "^8.0.1",
     "@lingo-reader/epub-parser": "^0.4.6",
     "@lingo-reader/fb2-parser": "^0.4.6",
     "@lingo-reader/mobi-parser": "^0.4.6",
     "@mozilla/readability": "^0.6.0",
+    "buffer": "^6.0.3",
     "busboy": "^1.6.0",
     "dompurify": "^3.4.13",
     "electron-updater": "^6.8.9",
-    "iconv-lite": "^0.7.3",
     "fflate": "^0.8.2",
+    "iconv-lite": "^0.7.3",
     "jschardet": "^3.1.4",
     "jsdom": "^30.0.1",
     "mammoth": "^1.12.1",
     "pdfjs-dist": "^6.2.108",
-    "qrcode": "^1.5.4"
+    "process": "^0.11.10",
+    "qrcode": "^1.5.4",
+    "stream-browserify": "^3.0.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
     "@types/busboy": "^1.5.4",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^24.0.0",
@@ -38,6 +47,7 @@
     "electron": "^43.4.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "fake-indexeddb": "^6.2.5",
     "typescript": "^5.9.2",
     "vite": "^7.3.6",
     "vitest": "^3.2.4"
@@ -53,7 +63,10 @@
       "package.json"
     ],
     "extraResources": [
-      { "from": "resources", "to": "resources" }
+      {
+        "from": "resources",
+        "to": "resources"
+      }
     ],
     "win": {
       "target": [
@@ -65,7 +78,13 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     },
-    "publish": [{ "provider": "github", "owner": "aries227", "repo": "pc-novel-reader" }]
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "aries227",
+        "repo": "pc-novel-reader"
+      }
+    ]
   },
   "pnpm": {
     "onlyBuiltDependencies": [

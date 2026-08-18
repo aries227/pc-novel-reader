@@ -25,6 +25,9 @@ export async function renderLibrary(container: HTMLElement, onOpen: (id: string)
       <button data-act="settings">设置</button>
     </div>`
   container.appendChild(header)
+  if ((window as unknown as Record<string, unknown>).__jianyueWeb) {
+    header.querySelector('[data-act="upload"]')?.remove()
+  }
 
   const grid = document.createElement('div')
   grid.className = 'lib-grid'

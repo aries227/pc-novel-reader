@@ -16,6 +16,14 @@ export default defineConfig({
     resolve: { alias: { '@shared': resolve('src/shared') } }
   },
   renderer: {
-    resolve: { alias: { '@shared': resolve('src/shared') } }
+    publicDir: 'resources',
+    resolve: {
+      alias: {
+        '@shared': resolve('src/shared'),
+        buffer: 'buffer',
+        stream: 'stream-browserify',
+        process: 'process/browser'
+      }
+    }
   }
 })

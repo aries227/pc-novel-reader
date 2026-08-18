@@ -100,6 +100,9 @@ export async function renderReader(container: HTMLElement, bookId: string, onBac
     </div>`
 
   const root = container.querySelector('.reader-root') as HTMLElement
+  if ((window as unknown as Record<string, unknown>).__jianyueWeb) {
+    root.querySelector('[data-act="upload"]')?.remove()
+  }
   const pageEl = root.querySelector('.reader-page') as HTMLElement
   const titleEl = root.querySelector('.reader-title') as HTMLElement
   const tocEl = root.querySelector('.toc-list') as HTMLElement
